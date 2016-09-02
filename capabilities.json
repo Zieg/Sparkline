@@ -1,0 +1,327 @@
+{
+    "dataRoles": [
+         {
+            "displayName": "Axis",
+            "name": "axis",
+            "kind": 0
+        },
+        {
+            "displayName": "Category",
+            "name": "category",
+            "kind": 0
+        },
+        {
+            "displayName": "Values",
+            "name": "measure",
+            "kind": 1
+        },
+        {
+            "displayName": "Target Value",
+            "name": "target",
+            "kind": 1
+        },
+        {
+            "displayName": "Target Area Min",
+            "name": "targetRangeMin",
+            "kind": 1
+        },
+        {
+            "displayName": "Target Area Max",
+            "name": "targetRangeMax",
+            "kind": 1
+        }
+    ],
+    "dataViewMappings": [
+        {
+            "conditions": [
+                { "axis": { "max": 1 }, "category": { "min": 1, "max": 1 }, "measure": { "max": 1 }, "target": { "max": 1 }, "targetRangeMin": { "max": 1 }, "targetRangeMax": { "max": 1 } },
+                 { "axis": { "max": 1 }, "category": { "max": 0 }, "target": { "max": 1 }, "targetRangeMin": { "max": 1 }, "targetRangeMax": { "max": 1 } }
+            ],
+            "categorical": {
+                "categories": {
+                    "for": {
+                        "in": "category"
+                    }
+                },
+                "values": {
+                    "group": {
+                        "by": "axis",
+                        "select":[
+                            { "bind": { "to": "measure" } },
+                            { "bind": { "to": "target" } },
+                            { "bind": { "to": "targetRangeMin" } },
+                            { "bind": { "to": "targetRangeMax" } }
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    
+    "objects": {
+        "label": {
+            "displayName": "Category Label",
+            "properties": {
+                "show": {
+                    "displayName": "Show",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "text": {
+                    "displayName": "Text",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "text": true
+                    }
+                },
+                "fontSize": {
+                   "displayName": "Text size",
+                   "type": {
+                       "formatting": {
+                            "fontSize": true
+                        }
+                   }
+                },
+                "fill": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "autoSize": {
+                    "displayName": "Auto width",
+                    "type": {
+                        "bool": true
+                    }
+                }
+            }
+        },
+        "value": {
+            "displayName": "Value Label",
+            "properties": {
+                "show": {
+                    "displayName": "Show",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "aggregate": {
+                    "displayName": "Display value",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Last value",
+                                "value": "cur"
+                            },
+                            {
+                                "displayName": "Sum values",
+                                "value": "sum"
+                            },
+                            {
+                                "displayName": "Average value",
+                                "value": "avg"
+                            }
+                        ]
+                    }
+                },
+                "fontSize": {
+                   "displayName": "Text size",
+                   "type": {
+                       "formatting": {
+                            "fontSize": true
+                        }
+                   }
+                },
+                "fill": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "unit": {
+                   "displayName": "Display unit",
+                   "type": {
+                       "formatting": {
+                            "labelDisplayUnits": true
+                        }
+                   }
+                }, 
+                "precision": {
+                   "displayName": "Decimal places",
+                   "type": {
+                       "numeric": true
+                   }
+                }
+            }
+        },
+        "line": {
+            "displayName": "Line",
+             "properties": {
+                  "axis": {
+                     "displayName": "Missing data points",
+                     "type": {
+                         "enumeration": [
+                            {
+                                "displayName": "Ignore",
+                                "value": "ignore"
+                            },
+                             {
+                                "displayName": "Set to zero",
+                                "value": "setToZero"
+                            }
+                         ]
+                     }
+                 },
+                 "kind": {
+                     "displayName": "Appearance",
+                     "type": {
+                         "enumeration": [
+                            {
+                                "displayName": "Straight",
+                                "value": "linear"
+                            },
+                            {
+                                "displayName": "Smooth",
+                                "value": "cardinal"
+                            },
+                            {
+                                "displayName": "Step",
+                                "value": "step-before"
+                             }
+                         ]
+                     }
+                 },
+                 "fill": {
+                     "displayName": "Line Color",
+                     "type": {
+                         "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                         }
+                     }
+                 },
+                 "weight": {
+                    "displayName": "Weight",
+                    "type": {
+                        "numeric": true
+                    }
+                 }
+             }
+        }, 
+        "area": {
+            "displayName": "Area",
+             "properties": {
+                 "show": {
+                     "displayName": "Show",
+                     "type": {
+                         "bool": true
+                     }
+                 },
+                 "fill": {
+                     "displayName": "Color",
+                     "type": {
+                          "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                         }
+                     }
+                 },
+                 "transparency": {
+                    "displayName": "Transparency",
+                    "type": {
+                        "numeric": true
+                    }
+                 }
+             }
+          }, 
+          "target": {
+             "displayName": "Target",
+             "properties": {
+                 "fill": {
+                     "displayName": "Line Color",
+                     "type": {
+                         "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                         }
+                     }
+                 },
+                 "rangeFill": {
+                     "displayName": "Area Color",
+                     "type": {
+                         "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                         }
+                     }
+                 }
+             }
+        },
+        "hiLoPoints": {
+             "displayName": "Points",
+             "properties": {
+                 "hiShow": {
+                     "displayName": "Highest point",
+                     "type": {
+                         "bool": true
+                     }
+                 },
+                 "hiFill": {
+                     "displayName": "Highest point color",
+                     "type": {
+                         "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                         }
+                     }
+                 }, 
+                 "loShow": {
+                     "displayName": "Lowest point",
+                     "type": {
+                         "bool": true
+                     }
+                 },
+                 "loFill": {
+                     "displayName": "Lowest point color",
+                     "type": {
+                         "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                         }
+                     }
+                 }, 
+                 "curShow": {
+                     "displayName": "Current point",
+                     "type": {
+                         "bool": true
+                     }
+                 },
+                 "curFill": {
+                     "displayName": "Current point color",
+                     "type": {
+                         "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                         }
+                     }
+                 }
+             }
+        }
+    }
+}
