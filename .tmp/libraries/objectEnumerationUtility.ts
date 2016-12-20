@@ -12,7 +12,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
         if(objects) {
             let object = objects[objectName];
             if(object) {
-                let property: T = object[propertyName];
+                let property: T = <any>object[propertyName];
                 if(property !== undefined) {
                     return property;
                 }

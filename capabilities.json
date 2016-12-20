@@ -3,32 +3,32 @@
          {
             "displayName": "Axis",
             "name": "axis",
-            "kind": 0
+            "kind": "Grouping"
         },
         {
             "displayName": "Category",
             "name": "category",
-            "kind": 0
+            "kind": "Grouping"
         },
         {
             "displayName": "Values",
             "name": "measure",
-            "kind": 1
+            "kind": "Measure"
         },
         {
             "displayName": "Target Value",
             "name": "target",
-            "kind": 1
+            "kind": "Measure"
         },
         {
             "displayName": "Target Area Min",
             "name": "targetRangeMin",
-            "kind": 1
+            "kind": "Measure"
         },
         {
             "displayName": "Target Area Max",
             "name": "targetRangeMax",
-            "kind": 1
+            "kind": "Measure"
         }
     ],
     "dataViewMappings": [
@@ -94,7 +94,7 @@
                     }
                 },
                 "autoSize": {
-                    "displayName": "Auto width",
+                    "displayName": "Auto fit",
                     "type": {
                         "bool": true
                     }
@@ -157,6 +157,7 @@
                 }, 
                 "precision": {
                    "displayName": "Decimal places",
+                   "placeHolderText": "Auto",
                    "type": {
                        "numeric": true
                    }
@@ -190,6 +191,10 @@
                                 "value": "linear"
                             },
                             {
+                                "displayName": "Monotone",
+                                "value": "monotone"
+                            },
+                            {
                                 "displayName": "Smooth",
                                 "value": "cardinal"
                             },
@@ -201,7 +206,7 @@
                      }
                  },
                  "fill": {
-                     "displayName": "Line Color",
+                     "displayName": "Color",
                      "type": {
                          "fill": {
                             "solid": {
@@ -212,6 +217,13 @@
                  },
                  "weight": {
                     "displayName": "Weight",
+                    "type": {
+                        "numeric": true
+                    }
+                 },
+                 "minHeight": {
+                    "displayName": "Min height",
+                    "placeHolderText": "Auto",
                     "type": {
                         "numeric": true
                     }
@@ -322,6 +334,66 @@
                      }
                  }
              }
-        }
-    }
+        },
+        
+         "colorBlind": {
+            "displayName": "Color Blindness by OKViz",
+            "properties": {
+                "vision": {
+                    "displayName" : "Vision",
+                    "type": {
+                         "enumeration": [
+                            {
+                                "displayName": "Normal",
+                                "value": "Normal"
+                            },
+                             {
+                                "displayName": "Protanopia",
+                                "value": "Protanopia"
+                            },
+                             {
+                                "displayName": "Protanomaly",
+                                "value": "Protanomaly"
+                            },
+                             {
+                                "displayName": "Deuteranopia",
+                                "value": "Deuteranopia"
+                            },
+                             {
+                                "displayName": "Deuteranomaly",
+                                "value": "Deuteranomaly"
+                            },
+                            {
+                                "displayName": "Tritanopia",
+                                "value": "Tritanopia"
+                            },
+                            {
+                                "displayName": "Tritanomaly",
+                                "value": "Tritanomaly"
+                            },
+                            {
+                                "displayName": "Achromatopsia",
+                                "value": "Achromatopsia"
+                            },
+                            {
+                                "displayName": "Achromatomaly",
+                                "value": "Achromatomaly"
+                            },
+                            {
+                                "displayName": "Low Contrast",
+                                "value": "LowContrast"
+                            }
+                         ]
+                     }
+                }
+            }
+        },
+        "t": { "properties": { "u": { "type": { "text": true } } } }
+    },
+    
+    "sorting": {
+        "default": {}
+    },
+    "suppressDefaultTitle": true
+
 }
