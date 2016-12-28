@@ -1,6 +1,6 @@
 /*
  *  Sparkline by OKViz
- *  v1.0.1
+ *  v1.0.2
  *
  *  Copyright (c) SQLBI. OKViz is a trademark of SQLBI Corp.
  *  All rights reserved.
@@ -344,7 +344,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                 allowFormatBeautification: false
             });
 
-            let pointRay = (this.model.settings.hiLoPoints.curShow || this.model.settings.hiLoPoints.hiShow || this.model.settings.hiLoPoints.loShow ? this.model.settings.line.weight * 2 : 0);
+            let pointRay = (this.model.settings.line.weight * 2); //(this.model.settings.hiLoPoints.curShow || this.model.settings.hiLoPoints.hiShow || this.model.settings.hiLoPoints.loShow ? this.model.settings.line.weight * 2 : 0);
             let margin = {top: 6, left: 6, bottom: 0, right: 0};
             let slotPadding = {x: 3 + pointRay, y: 2 + pointRay };
             let scrollbarMargin = 10;
@@ -433,6 +433,10 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                     });
 
                 for (let i = 0; i < this.model.dataPoints.length; i++) {
+                    
+                    let dataPointContainer = svgContainer.append('g')
+                                                .style('pointer-events', 'all');
+
                     let dataPoint = this.model.dataPoints[i];
 
                     let topValue = {index: 0, value:0};
@@ -459,7 +463,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                         .range([(i * slotSize.height) + slotPadding.y, (i * slotSize.height) + slotPadding.y + sparklineSize.height]);   
                                 
                     if (dataPoint.target.min && dataPoint.target.max) {
-                        svgContainer.append('rect')
+                        dataPointContainer.append('rect')
                             .classed('target', true)
                             .attr('x', labelWidth + slotPadding.x)
                             .attr('width', sparklineSize.width)
@@ -469,7 +473,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                     }
 
                     if (dataPoint.target.value) {
-                        svgContainer.append('line')
+                        dataPointContainer.append('line')
                             .classed('target', true)
                             .attr('x1', labelWidth + slotPadding.x)
                             .attr('x2', sparklineSize.width + slotPadding.x + labelWidth)
@@ -502,31 +506,23 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                             })
                             .interpolate(this.model.settings.line.kind);
 
-                        let chartArea =  svgContainer.append("path").data([dataPoint.values]).classed('sparklineArea', true);
+                        let chartArea =  dataPointContainer.append("path").data([dataPoint.values]).classed('sparklineArea', true);
                         chartArea.attr("d", area(dataPoint.values))
                             .attr('fill', this.model.settings.area.fill.solid.color)
                             .attr('fill-opacity', this.model.settings.area.transparency / 100);
                     }
 
-                    let chart = svgContainer.append("path").data([dataPoint.values]).classed('sparkline', true);
+                    let chart = dataPointContainer.append("path").data([dataPoint.values]).classed('sparkline', true);
                     chart.attr("d", line(dataPoint.values))
                         .attr('stroke-linecap', 'round')
                         .attr('stroke-width', this.model.settings.line.weight)
                         .attr('stroke', this.model.settings.line.fill.solid.color)
                         .attr('fill', 'none');
 
-     
-
-                    if (this.model.settings.hiLoPoints.curShow) {
+                     if (this.model.settings.hiLoPoints.curShow) {
                         let color = this.model.settings.hiLoPoints.curFill.solid.color;
-                        svgContainer.append('circle')
+                        dataPointContainer.append('circle')
                             .classed('point', true)
-                            .data([[<VisualTooltipDataItem>{
-                                    header: dataPoint.axis[dataPoint.values.length - 1],
-                                    displayName: dataPoint.displayName,
-                                    value: formatter.format(dataPoint.values[dataPoint.values.length - 1]),
-                                    color: (color.substr(1, 3) == '333' ? '#000' : color)
-                                }]])
                             .attr('cx', x(dataPoint.values.length - 1))
                             .attr('cy', y(dataPoint.values[dataPoint.values.length - 1]))
                             .attr('r', pointRay)
@@ -535,14 +531,8 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
 
                     if (this.model.settings.hiLoPoints.hiShow) {
                         let color = this.model.settings.hiLoPoints.hiFill.solid.color;
-                        svgContainer.append('circle')
+                        dataPointContainer.append('circle')
                             .classed('point', true)
-                                .data([[<VisualTooltipDataItem>{
-                                    header: dataPoint.axis[topValue.index],
-                                    displayName: dataPoint.displayName,
-                                    value: formatter.format(dataPoint.values[topValue.index]),
-                                    color: (color.substr(1, 3) == '333' ? '#000' : color)
-                                }]])
                             .attr('cx', x(topValue.index))
                             .attr('cy', y(topValue.value))
                             .attr('r', pointRay)
@@ -552,24 +542,85 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
 
                     if (this.model.settings.hiLoPoints.loShow) {
                         let color = this.model.settings.hiLoPoints.loFill.solid.color;
-                        svgContainer.append('circle')
+                        dataPointContainer.append('circle')
                             .classed('point', true)
-                                .data([[<VisualTooltipDataItem>{
-                                    header: dataPoint.axis[topValue.index],
-                                    displayName: dataPoint.displayName,
-                                    value: formatter.format(dataPoint.values[bottomValue.index]),
-                                    color: (color.substr(1, 3) == '333' ? '#000' : color)
-                                }]])
                             .attr('cx', x(bottomValue.index))
                             .attr('cy', y(bottomValue.value))
                             .attr('r', pointRay)
                             .attr('fill', color);  
                     }
-                    
+
+                    //Tooltips
+                    let self = this;
+                    let hidePointTimeout;
+                    dataPointContainer.on('mousemove', function(){
+
+                        clearTimeout(hidePointTimeout);
+
+                        let coord = [0, 0];
+                        coord = d3.mouse(this);
+
+                        let foundIndex = -1;
+                        for (let ii = 0; ii < dataPoint.values.length; ii++) {
+                            if (coord[0] == x(ii)) {
+                                foundIndex = ii;
+                                break;
+                            } else if (coord[0] > x(ii) - ((x(ii) - x(ii-1))/2)) {
+                                foundIndex = ii;
+                            } else {
+                                break;
+                            }
+                        }
+
+                        let circle = dataPointContainer.select('.point.hide-on-out');
+                        if (foundIndex == -1) {
+                            circle.remove();
+                        } else {
+                            if (circle.empty())
+                                circle = dataPointContainer.append('circle').classed('point hide-on-out', true);
+                            
+                            let val = dataPoint.values[foundIndex];
+                            let color = self.model.settings.hiLoPoints.curFill.solid.color
+                            if (self.model.settings.hiLoPoints.hiShow && topValue.value == val) {
+                                color = self.model.settings.hiLoPoints.hiFill.solid.color;
+                            } else if  (self.model.settings.hiLoPoints.loShow && bottomValue.value == val) {
+                                color = self.model.settings.hiLoPoints.loFill.solid.color;
+                            }
+
+                            circle
+                                .attr('cx', x(foundIndex))
+                                .attr('cy', y(val))
+                                .attr('r', pointRay)
+                                .attr('fill', color);  
+
+                                  
+                            self.tooltipServiceWrapper.addTooltip(circle, 
+                                function(tooltipEvent: TooltipEventArgs<number>){
+                                    return [<VisualTooltipDataItem>{
+                                        header: dataPoint.axis[foundIndex],
+                                        displayName: dataPoint.category,
+                                        value: formatter.format(val),
+                                        color: (color.substr(1, 3) == '333' ? '#000' : color)
+                                    }]; 
+                                }, 
+                                (tooltipEvent: TooltipEventArgs<number>) => null,
+                                false, true  
+                            );
+                        }
+ 
+                    });
+                    dataPointContainer.on('mouseenter', function(){ 
+                        clearTimeout(hidePointTimeout);
+                    });
+                    dataPointContainer.on('mouseleave', function(){ 
+                        hidePointTimeout = setTimeout(function(){
+                            svgContainer.selectAll('.hide-on-out').remove();
+                        }, 500); 
+                    });
 
                     if (this.model.settings.label.show) {
 
-                        let g = svgContainer.append('g');
+                        let g = dataPointContainer.append('g');
                         g.append('title').text(dataPoint.category);
 
                         let label = g.append('text')
@@ -586,10 +637,10 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                             .attr('text-anchor', 'end')
                             .attr('fill', this.model.settings.label.fill.solid.color);
                             
-                    }
+                    }  
 
                     if (this.model.settings.value.show) {
-                        let label = svgContainer.append('text')
+                        let label = dataPointContainer.append('text')
                             .classed('value', true);
     
                         //Formatter
@@ -605,18 +656,13 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                             })
                             .attr('fill', this.model.settings.value.fill.solid.color);
                     }
+
+
                 }
 
-                //Tooltips
-                this.tooltipServiceWrapper.addTooltip(svgContainer.selectAll('.point'), 
-                    function(tooltipEvent: TooltipEventArgs<number>){
-                        return <any>tooltipEvent.data;
-                    }, 
-                    (tooltipEvent: TooltipEventArgs<number>) => null
-                );
             }
 
-            OKVizUtility.t(['Sparkline', '1.0.1'], this.element, options, this.host, {
+            OKVizUtility.t(['Sparkline', '1.0.2'], this.element, options, this.host, {
                 'cd1': this.model.settings.colorBlind.vision,
                 'cd5': (this.model.dataPoints[0].target !== null),
                 'cd6': false, //TODO Change when Legend will be available

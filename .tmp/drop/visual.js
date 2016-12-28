@@ -4409,7 +4409,7 @@ var powerbi;
                         this.handleTouchDelay = handleTouchDelay;
                         this.rootElement = rootElement;
                     }
-                    TooltipServiceWrapper.prototype.addTooltip = function (selection, getTooltipInfoDelegate, getDataPointIdentity, reloadTooltipDataOnMouseMove) {
+                    TooltipServiceWrapper.prototype.addTooltip = function (selection, getTooltipInfoDelegate, getDataPointIdentity, reloadTooltipDataOnMouseMove, forceShow) {
                         var _this = this;
                         if (!selection || !this.visualHostTooltipService.enabled()) {
                             return;
@@ -4434,6 +4434,8 @@ var powerbi;
                                 identities: selectionId ? [selectionId] : [],
                             });
                         });
+                        if (forceShow)
+                            selection.on("mouseover.tooltip").call(selection.node(), selection.datum());
                         selection.on("mouseout.tooltip", function () {
                             _this.visualHostTooltipService.hide({
                                 isTouchEvent: false,
@@ -5042,7 +5044,7 @@ var powerbi;
 })(powerbi || (powerbi = {}));
 /*
  *  Sparkline by OKViz
- *  v1.0.1
+ *  v1.0.2
  *
  *  Copyright (c) SQLBI. OKViz is a trademark of SQLBI Corp.
  *  All rights reserved.
@@ -5293,7 +5295,7 @@ var powerbi;
                             displayUnitSystemType: 2,
                             allowFormatBeautification: false
                         });
-                        var pointRay = (this.model.settings.hiLoPoints.curShow || this.model.settings.hiLoPoints.hiShow || this.model.settings.hiLoPoints.loShow ? this.model.settings.line.weight * 2 : 0);
+                        var pointRay = (this.model.settings.line.weight * 2); //(this.model.settings.hiLoPoints.curShow || this.model.settings.hiLoPoints.hiShow || this.model.settings.hiLoPoints.loShow ? this.model.settings.line.weight * 2 : 0);
                         var margin = { top: 6, left: 6, bottom: 0, right: 0 };
                         var slotPadding = { x: 3 + pointRay, y: 2 + pointRay };
                         var scrollbarMargin = 10;
@@ -5360,13 +5362,15 @@ var powerbi;
                             height: slotSize.height - (slotPadding.y * 2)
                         };
                         if (this.model.dataPoints.length > 0) {
-                            var svgContainer = container
+                            var svgContainer_1 = container
                                 .append('svg')
                                 .attr({
                                 'width': '100%',
                                 'height': (this.model.dataPoints.length * slotSize.height)
                             });
                             var _loop_1 = function(i) {
+                                var dataPointContainer = svgContainer_1.append('g')
+                                    .style('pointer-events', 'all');
                                 var dataPoint = this_1.model.dataPoints[i];
                                 var topValue = { index: 0, value: 0 };
                                 var bottomValue = { index: 0, value: Infinity };
@@ -5389,7 +5393,7 @@ var powerbi;
                                     .domain([topValue.value, bottomValue.value])
                                     .range([(i * slotSize.height) + slotPadding.y, (i * slotSize.height) + slotPadding.y + sparklineSize.height]);
                                 if (dataPoint.target.min && dataPoint.target.max) {
-                                    svgContainer.append('rect')
+                                    dataPointContainer.append('rect')
                                         .classed('target', true)
                                         .attr('x', labelWidth + slotPadding.x)
                                         .attr('width', sparklineSize.width)
@@ -5398,7 +5402,7 @@ var powerbi;
                                         .attr('fill', this_1.model.settings.target.rangeFill.solid.color);
                                 }
                                 if (dataPoint.target.value) {
-                                    svgContainer.append('line')
+                                    dataPointContainer.append('line')
                                         .classed('target', true)
                                         .attr('x1', labelWidth + slotPadding.x)
                                         .attr('x2', sparklineSize.width + slotPadding.x + labelWidth)
@@ -5425,12 +5429,12 @@ var powerbi;
                                         return y(d);
                                     })
                                         .interpolate(this_1.model.settings.line.kind);
-                                    var chartArea = svgContainer.append("path").data([dataPoint.values]).classed('sparklineArea', true);
+                                    var chartArea = dataPointContainer.append("path").data([dataPoint.values]).classed('sparklineArea', true);
                                     chartArea.attr("d", area(dataPoint.values))
                                         .attr('fill', this_1.model.settings.area.fill.solid.color)
                                         .attr('fill-opacity', this_1.model.settings.area.transparency / 100);
                                 }
-                                var chart = svgContainer.append("path").data([dataPoint.values]).classed('sparkline', true);
+                                var chart = dataPointContainer.append("path").data([dataPoint.values]).classed('sparkline', true);
                                 chart.attr("d", line(dataPoint.values))
                                     .attr('stroke-linecap', 'round')
                                     .attr('stroke-width', this_1.model.settings.line.weight)
@@ -5438,14 +5442,8 @@ var powerbi;
                                     .attr('fill', 'none');
                                 if (this_1.model.settings.hiLoPoints.curShow) {
                                     var color = this_1.model.settings.hiLoPoints.curFill.solid.color;
-                                    svgContainer.append('circle')
+                                    dataPointContainer.append('circle')
                                         .classed('point', true)
-                                        .data([[{
-                                                header: dataPoint.axis[dataPoint.values.length - 1],
-                                                displayName: dataPoint.displayName,
-                                                value: formatter.format(dataPoint.values[dataPoint.values.length - 1]),
-                                                color: (color.substr(1, 3) == '333' ? '#000' : color)
-                                            }]])
                                         .attr('cx', x(dataPoint.values.length - 1))
                                         .attr('cy', y(dataPoint.values[dataPoint.values.length - 1]))
                                         .attr('r', pointRay)
@@ -5453,14 +5451,8 @@ var powerbi;
                                 }
                                 if (this_1.model.settings.hiLoPoints.hiShow) {
                                     var color = this_1.model.settings.hiLoPoints.hiFill.solid.color;
-                                    svgContainer.append('circle')
+                                    dataPointContainer.append('circle')
                                         .classed('point', true)
-                                        .data([[{
-                                                header: dataPoint.axis[topValue.index],
-                                                displayName: dataPoint.displayName,
-                                                value: formatter.format(dataPoint.values[topValue.index]),
-                                                color: (color.substr(1, 3) == '333' ? '#000' : color)
-                                            }]])
                                         .attr('cx', x(topValue.index))
                                         .attr('cy', y(topValue.value))
                                         .attr('r', pointRay)
@@ -5468,21 +5460,73 @@ var powerbi;
                                 }
                                 if (this_1.model.settings.hiLoPoints.loShow) {
                                     var color = this_1.model.settings.hiLoPoints.loFill.solid.color;
-                                    svgContainer.append('circle')
+                                    dataPointContainer.append('circle')
                                         .classed('point', true)
-                                        .data([[{
-                                                header: dataPoint.axis[topValue.index],
-                                                displayName: dataPoint.displayName,
-                                                value: formatter.format(dataPoint.values[bottomValue.index]),
-                                                color: (color.substr(1, 3) == '333' ? '#000' : color)
-                                            }]])
                                         .attr('cx', x(bottomValue.index))
                                         .attr('cy', y(bottomValue.value))
                                         .attr('r', pointRay)
                                         .attr('fill', color);
                                 }
+                                //Tooltips
+                                var self_1 = this_1;
+                                var hidePointTimeout;
+                                dataPointContainer.on('mousemove', function () {
+                                    clearTimeout(hidePointTimeout);
+                                    var coord = [0, 0];
+                                    coord = d3.mouse(this);
+                                    var foundIndex = -1;
+                                    for (var ii = 0; ii < dataPoint.values.length; ii++) {
+                                        if (coord[0] == x(ii)) {
+                                            foundIndex = ii;
+                                            break;
+                                        }
+                                        else if (coord[0] > x(ii) - ((x(ii) - x(ii - 1)) / 2)) {
+                                            foundIndex = ii;
+                                        }
+                                        else {
+                                            break;
+                                        }
+                                    }
+                                    var circle = dataPointContainer.select('.point.hide-on-out');
+                                    if (foundIndex == -1) {
+                                        circle.remove();
+                                    }
+                                    else {
+                                        if (circle.empty())
+                                            circle = dataPointContainer.append('circle').classed('point hide-on-out', true);
+                                        var val_1 = dataPoint.values[foundIndex];
+                                        var color_1 = self_1.model.settings.hiLoPoints.curFill.solid.color;
+                                        if (self_1.model.settings.hiLoPoints.hiShow && topValue.value == val_1) {
+                                            color_1 = self_1.model.settings.hiLoPoints.hiFill.solid.color;
+                                        }
+                                        else if (self_1.model.settings.hiLoPoints.loShow && bottomValue.value == val_1) {
+                                            color_1 = self_1.model.settings.hiLoPoints.loFill.solid.color;
+                                        }
+                                        circle
+                                            .attr('cx', x(foundIndex))
+                                            .attr('cy', y(val_1))
+                                            .attr('r', pointRay)
+                                            .attr('fill', color_1);
+                                        self_1.tooltipServiceWrapper.addTooltip(circle, function (tooltipEvent) {
+                                            return [{
+                                                    header: dataPoint.axis[foundIndex],
+                                                    displayName: dataPoint.category,
+                                                    value: formatter.format(val_1),
+                                                    color: (color_1.substr(1, 3) == '333' ? '#000' : color_1)
+                                                }];
+                                        }, function (tooltipEvent) { return null; }, false, true);
+                                    }
+                                });
+                                dataPointContainer.on('mouseenter', function () {
+                                    clearTimeout(hidePointTimeout);
+                                });
+                                dataPointContainer.on('mouseleave', function () {
+                                    hidePointTimeout = setTimeout(function () {
+                                        svgContainer_1.selectAll('.hide-on-out').remove();
+                                    }, 500);
+                                });
                                 if (this_1.model.settings.label.show) {
-                                    var g = svgContainer.append('g');
+                                    var g = dataPointContainer.append('g');
                                     g.append('title').text(dataPoint.category);
                                     var label = g.append('text')
                                         .classed('label', true);
@@ -5496,7 +5540,7 @@ var powerbi;
                                         .attr('fill', this_1.model.settings.label.fill.solid.color);
                                 }
                                 if (this_1.model.settings.value.show) {
-                                    var label = svgContainer.append('text')
+                                    var label = dataPointContainer.append('text')
                                         .classed('value', true);
                                     //Formatter
                                     var value = dataPoint.displayValue;
@@ -5515,12 +5559,8 @@ var powerbi;
                             for (var i = 0; i < this.model.dataPoints.length; i++) {
                                 _loop_1(i);
                             }
-                            //Tooltips
-                            this.tooltipServiceWrapper.addTooltip(svgContainer.selectAll('.point'), function (tooltipEvent) {
-                                return tooltipEvent.data;
-                            }, function (tooltipEvent) { return null; });
                         }
-                        PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C.OKVizUtility.t(['Sparkline', '1.0.1'], this.element, options, this.host, {
+                        PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C.OKVizUtility.t(['Sparkline', '1.0.2'], this.element, options, this.host, {
                             'cd1': this.model.settings.colorBlind.vision,
                             'cd5': (this.model.dataPoints[0].target !== null),
                             'cd6': false,
@@ -5639,7 +5679,7 @@ var powerbi;
                 name: 'PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C',
                 displayName: 'Sparkline by OKViz',
                 class: 'Visual',
-                version: '1.0.1',
+                version: '1.0.2',
                 apiVersion: '1.3.0',
                 create: function (options) { return new powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C.Visual(options); },
                 custom: true
