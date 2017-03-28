@@ -285,6 +285,12 @@
         "hiLoPoints": {
              "displayName": "Points",
              "properties": {
+                "showAllPoints": {
+                     "displayName": "Show all",
+                     "type": {
+                         "bool": true
+                     }
+                 },
                  "hiShow": {
                      "displayName": "Highest point",
                      "type": {

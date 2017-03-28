@@ -1,6 +1,5 @@
 /*
  *  Sparkline by OKViz
- *  v1.0.2
  *
  *  Copyright (c) SQLBI. OKViz is a trademark of SQLBI Corp.
  *  All rights reserved.
@@ -24,8 +23,18 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+import tooltip = powerbi.extensibility.utils.tooltip;
+import TooltipEnabledDataPoint = powerbi.extensibility.utils.tooltip.TooltipEnabledDataPoint;
+import TooltipEventArgs = powerbi.extensibility.utils.tooltip.TooltipEventArgs;
 
 module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C  {
+
+    interface VisualMeta {
+        name: string;
+        version: string;
+        dev: boolean;
+    }
+
      interface VisualViewModel {
         dataPoints: VisualDataPoint[];
         settings: VisualSettings;
@@ -39,6 +48,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
 
     interface VisualDataPoint {
         values: any[];
+        identities: any[];
         axis: any[];
         format?: string;
         target: VisualDataPointTarget;
@@ -81,6 +91,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
             rangeFill: Fill;
         };
         hiLoPoints: {
+            showAllPoints: boolean;
             hiShow: boolean;
             hiFill: Fill;
             loShow: boolean;
@@ -126,6 +137,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                 rangeFill: {solid: { color: "#EEE" } }
            },
            hiLoPoints: {
+               showAllPoints: false,
                hiShow: true,
                hiFill: {solid: { color: "#399599" } },
                loShow: true,
@@ -184,6 +196,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                     rangeFill: getValue<Fill>(objects, "target", "rangeFill", settings.target.rangeFill),
                 },
                 hiLoPoints: {
+                    showAllPoints: getValue<boolean>(objects, "hiLoPoints", "showAllPoints", settings.hiLoPoints.showAllPoints),
                     hiShow: getValue<boolean>(objects, "hiLoPoints", "hiShow", settings.hiLoPoints.hiShow),
                     hiFill: getValue<Fill>(objects, "hiLoPoints", "hiFill", settings.hiLoPoints.hiFill),
                     loShow: getValue<boolean>(objects, "hiLoPoints", "loShow", settings.hiLoPoints.loShow),
@@ -240,6 +253,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                 let displayName;
                 let displayValue = 0;
                 let values = [];
+                let identities = []
                 let axis = [];
                 let format = null;
                 let target: VisualDataPointTarget = {value: null, min: null, max:null };
@@ -254,6 +268,14 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                                 displayName = dataValue.source.displayName;
 
                                 values.push(value);
+                                identities.push(hasCategoryFilled ?
+                                    host.createSelectionIdBuilder()
+                                    .withCategory(dataCategorical.categories[0], i)
+                                    .withSeries(dataCategorical.values, dataValue)
+                                    .createSelectionId():
+                                    host.createSelectionIdBuilder()
+                                    .withSeries(dataCategorical.values, dataValue)
+                                    .createSelectionId());
                                 axis.push(OKVizUtility.makeMeasureReadable(dataValue.source.groupName));
 
                                 if (value && !isNaN(value) && (settings.value.aggregate == 'sum' || settings.value.aggregate == 'avg')) {
@@ -290,6 +312,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
 
                 dataPoints.push({
                     values: values,
+                    identities: identities, 
                     axis: axis,
                     format: format,
                     target: target,
@@ -311,18 +334,26 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
     }
 
     export class Visual implements IVisual {
+        private meta: VisualMeta;
         private host: IVisualHost;
         private selectionManager: ISelectionManager;
-        private tooltipServiceWrapper: ITooltipServiceWrapper;
+        private tooltipServiceWrapper: tooltip.ITooltipServiceWrapper;
         private model: VisualViewModel;
 
         private element: d3.Selection<HTMLElement>;
 
-        constructor(options: VisualConstructorOptions) {         
+        constructor(options: VisualConstructorOptions) {   
+
+            this.meta = {
+                name: 'Sparkline',
+                version: '1.0.4',
+                dev: false
+            };
+            console.log('%c' + this.meta.name + ' by OKViz ' + this.meta.version + (this.meta.dev ? ' (BETA)' : ''), 'font-weight:bold');
 
             this.host = options.host;
             this.selectionManager = options.host.createSelectionManager();
-            this.tooltipServiceWrapper = createTooltipServiceWrapper(options.host.tooltipService, options.element);
+            this.tooltipServiceWrapper = tooltip.createTooltipServiceWrapper(options.host.tooltipService, options.element);
             this.model = { dataPoints: [], settings: <VisualSettings>{} };
 
             this.element = d3.select(options.element);
@@ -344,7 +375,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                 allowFormatBeautification: false
             });
 
-            let pointRay = (this.model.settings.line.weight * 2); //(this.model.settings.hiLoPoints.curShow || this.model.settings.hiLoPoints.hiShow || this.model.settings.hiLoPoints.loShow ? this.model.settings.line.weight * 2 : 0);
+            let pointRay = (this.model.settings.line.weight * 2); //(this.model.settings.hiLoPoints.showAllPoints || this.model.settings.hiLoPoints.curShow || this.model.settings.hiLoPoints.hiShow || this.model.settings.hiLoPoints.loShow ? this.model.settings.line.weight * 2 : 0);
             let margin = {top: 6, left: 6, bottom: 0, right: 0};
             let slotPadding = {x: 3 + pointRay, y: 2 + pointRay };
             let scrollbarMargin = 10;
@@ -518,105 +549,173 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                         .attr('stroke-width', this.model.settings.line.weight)
                         .attr('stroke', this.model.settings.line.fill.solid.color)
                         .attr('fill', 'none');
-
-                     if (this.model.settings.hiLoPoints.curShow) {
-                        let color = this.model.settings.hiLoPoints.curFill.solid.color;
-                        dataPointContainer.append('circle')
-                            .classed('point', true)
-                            .attr('cx', x(dataPoint.values.length - 1))
-                            .attr('cy', y(dataPoint.values[dataPoint.values.length - 1]))
-                            .attr('r', pointRay)
-                            .attr('fill', color);  
-                    }
-
-                    if (this.model.settings.hiLoPoints.hiShow) {
-                        let color = this.model.settings.hiLoPoints.hiFill.solid.color;
-                        dataPointContainer.append('circle')
-                            .classed('point', true)
-                            .attr('cx', x(topValue.index))
-                            .attr('cy', y(topValue.value))
-                            .attr('r', pointRay)
-                            .attr('fill', color);  
-                    }
-
-
-                    if (this.model.settings.hiLoPoints.loShow) {
-                        let color = this.model.settings.hiLoPoints.loFill.solid.color;
-                        dataPointContainer.append('circle')
-                            .classed('point', true)
-                            .attr('cx', x(bottomValue.index))
-                            .attr('cy', y(bottomValue.value))
-                            .attr('r', pointRay)
-                            .attr('fill', color);  
-                    }
-
-                    //Tooltips
+                    
                     let self = this;
-                    let hidePointTimeout;
-                    dataPointContainer.on('mousemove', function(){
-
-                        clearTimeout(hidePointTimeout);
-
-                        let coord = [0, 0];
-                        coord = d3.mouse(this);
-
-                        let foundIndex = -1;
+                    if (this.model.settings.hiLoPoints.showAllPoints) {
+                        
                         for (let ii = 0; ii < dataPoint.values.length; ii++) {
-                            if (coord[0] == x(ii)) {
-                                foundIndex = ii;
-                                break;
-                            } else if (coord[0] > x(ii) - ((x(ii) - x(ii-1))/2)) {
-                                foundIndex = ii;
-                            } else {
-                                break;
-                            }
-                        }
+                            let val = dataPoint.values[ii];
+                            let color = this.model.settings.hiLoPoints.curFill.solid.color;
+                            if (this.model.settings.hiLoPoints.hiShow && topValue.value == val)
+                                color = this.model.settings.hiLoPoints.hiFill.solid.color;
+                            else if  (this.model.settings.hiLoPoints.loShow && bottomValue.value == val)
+                                color = this.model.settings.hiLoPoints.loFill.solid.color;
 
-                        let circle = dataPointContainer.select('.point.hide-on-out');
-                        if (foundIndex == -1) {
-                            circle.remove();
-                        } else {
-                            if (circle.empty())
-                                circle = dataPointContainer.append('circle').classed('point hide-on-out', true);
-                            
-                            let val = dataPoint.values[foundIndex];
-                            let color = self.model.settings.hiLoPoints.curFill.solid.color
-                            if (self.model.settings.hiLoPoints.hiShow && topValue.value == val) {
-                                color = self.model.settings.hiLoPoints.hiFill.solid.color;
-                            } else if  (self.model.settings.hiLoPoints.loShow && bottomValue.value == val) {
-                                color = self.model.settings.hiLoPoints.loFill.solid.color;
-                            }
-
-                            circle
-                                .attr('cx', x(foundIndex))
-                                .attr('cy', y(val))
-                                .attr('r', pointRay)
-                                .attr('fill', color);  
-
-                                  
-                            self.tooltipServiceWrapper.addTooltip(circle, 
-                                function(tooltipEvent: TooltipEventArgs<number>){
-                                    return [<VisualTooltipDataItem>{
-                                        header: dataPoint.axis[foundIndex],
-                                        displayName: dataPoint.category,
-                                        value: formatter.format(val),
+                            svgContainer.append('circle')
+                                .classed('point', true)
+                                .data([[<VisualTooltipDataItem>{
+                                        header: dataPoint.axis[ii],
+                                        displayName: dataPoint.displayName,
+                                        value: formatter.format(dataPoint.values[ii]),
                                         color: (color.substr(1, 3) == '333' ? '#000' : color)
-                                    }]; 
-                                }, 
-                                (tooltipEvent: TooltipEventArgs<number>) => null,
-                                false, true  
-                            );
+                                    }]])
+                                .attr('cx', x(ii))
+                                .attr('cy', y(dataPoint.values[ii]))
+                                .attr('r', pointRay)
+                                .attr('fill', color)
+                                .on('click', function(d) {
+                                    self.selectionManager.select(dataPoint.identities[ii]).then((ids: ISelectionId[]) => {
+                                        if (ids.length == 0) {
+                                            d3.selectAll('.point').attr({ 'fill-opacity': 1});
+                                            d3.selectAll('.sparkline').attr({ 'stroke-opacity': 1 });
+                                        } else {
+                                            d3.selectAll('.point').attr({ 'fill-opacity': 0.3 });
+                                            d3.selectAll('.sparkline').attr({ 'stroke-opacity': 0.3 });
+                                            d3.select(this).attr({ 'fill-opacity': 1 });
+                                        }
+                                    });
+
+                                    (<Event>d3.event).stopPropagation();
+                                });
+
                         }
+
+                        this.tooltipServiceWrapper.addTooltip(svgContainer.selectAll('.point'), 
+                            function(tooltipEvent: TooltipEventArgs<number>){
+                                if (tooltipEvent)
+                                    return <any>tooltipEvent.data; 
+                                return null;
+                            }, 
+                            (tooltipEvent: TooltipEventArgs<number>) => null
+                        );
+
+                    } else {
+
+                        if (this.model.settings.hiLoPoints.curShow) {
+                            let color = this.model.settings.hiLoPoints.curFill.solid.color;
+                            dataPointContainer.append('circle')
+                                .classed('point fixed', true)
+                                .attr('cx', x(dataPoint.values.length - 1))
+                                .attr('cy', y(dataPoint.values[dataPoint.values.length - 1]))
+                                .attr('r', pointRay)
+                                .attr('fill', color);
+
+                        }
+
+                        if (this.model.settings.hiLoPoints.hiShow) {
+                            let color = this.model.settings.hiLoPoints.hiFill.solid.color;
+                            dataPointContainer.append('circle')
+                                .classed('point fixed', true)
+                                .attr('cx', x(topValue.index))
+                                .attr('cy', y(topValue.value))
+                                .attr('r', pointRay)
+                                .attr('fill', color);
+                        }
+
+
+                        if (this.model.settings.hiLoPoints.loShow) {
+                            let color = this.model.settings.hiLoPoints.loFill.solid.color;
+                            dataPointContainer.append('circle')
+                                .classed('point fixed', true)
+                                .attr('cx', x(bottomValue.index))
+                                .attr('cy', y(bottomValue.value))
+                                .attr('r', pointRay)
+                                .attr('fill', color);
+                        }
+                    
+
+                        //Tooltips
+                        
+                        let hidePointTimeout;
+                        dataPointContainer.on('mousemove', function(){
+
+                            clearTimeout(hidePointTimeout);
+
+                            let coord = [0, 0];
+                            coord = d3.mouse(this);
+
+                            let foundIndex = -1;
+                            for (let ii = 0; ii < dataPoint.values.length; ii++) {
+                                if (coord[0] == x(ii)) {
+                                    foundIndex = ii;
+                                    break;
+                                } else if (coord[0] > x(ii) - ((x(ii) - x(ii-1))/2)) {
+                                    foundIndex = ii;
+                                } else {
+                                    break;
+                                }
+                            }
+
+                            let circle = dataPointContainer.select('.point:not(.fixed):not(.keep)');
+                            if (foundIndex == -1) {
+                                circle.remove();
+                            } else {
+                                if (circle.empty())
+                                    circle = dataPointContainer.append('circle').classed('point', true);
+                                
+                                let val = dataPoint.values[foundIndex];
+                                let color = self.model.settings.hiLoPoints.curFill.solid.color
+                                if (self.model.settings.hiLoPoints.hiShow && topValue.value == val) {
+                                    color = self.model.settings.hiLoPoints.hiFill.solid.color;
+                                } else if  (self.model.settings.hiLoPoints.loShow && bottomValue.value == val) {
+                                    color = self.model.settings.hiLoPoints.loFill.solid.color;
+                                }
+
+                                circle
+                                    .attr('cx', x(foundIndex))
+                                    .attr('cy', y(val))
+                                    .attr('r', pointRay)
+                                    .attr('fill', color)
+                                    .on('click', function(d) {
+                                        self.selectionManager.select(dataPoint.identities[foundIndex]).then((ids: ISelectionId[]) => {
+
+                                            let selection = (ids.length > 0);
+                                            d3.selectAll('.point.fixed').attr({ 'fill-opacity': (selection ? 0.3 : 1) });
+                                            d3.selectAll('.sparkline').attr({ 'stroke-opacity': (selection ? 0.3 : 1) });
+                                            d3.selectAll('.point.keep').classed('keep', false);
+
+                                            if (selection) 
+                                                d3.select(this).classed('keep', true).attr({ 'fill-opacity': 1 });
+
+                                            d3.selectAll('.point:not(.fixed):not(.keep)').remove();
+                                        });
+
+                                        (<Event>d3.event).stopPropagation();
+                                    });  
+
+                                self.tooltipServiceWrapper.addTooltip(circle, 
+                                    function(tooltipEvent: TooltipEventArgs<TooltipEnabledDataPoint>){
+                                        return [<VisualTooltipDataItem>{
+                                            header: dataPoint.axis[foundIndex],
+                                            displayName: dataPoint.category,
+                                            value: formatter.format(val),
+                                            color: (color.substr(1, 3) == '333' ? '#000' : color)
+                                        }]; 
+                                    }, null, true  
+                                );
+                            }
  
-                    });
-                    dataPointContainer.on('mouseenter', function(){ 
-                        clearTimeout(hidePointTimeout);
-                    });
-                    dataPointContainer.on('mouseleave', function(){ 
-                        hidePointTimeout = setTimeout(function(){
-                            svgContainer.selectAll('.hide-on-out').remove();
-                        }, 500); 
-                    });
+                        });
+                        dataPointContainer.on('mouseenter', function(){ 
+                            clearTimeout(hidePointTimeout);
+                        });
+                       dataPointContainer.on('mouseleave', function(){ 
+                            hidePointTimeout = setTimeout(function(){
+                                svgContainer.selectAll('.point:not(.fixed):not(.keep)').remove();
+                            }, 500);
+                        });
+
+                    }
 
                     if (this.model.settings.label.show) {
 
@@ -662,10 +761,9 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
 
             }
 
-            OKVizUtility.t(['Sparkline', '1.0.2'], this.element, options, this.host, {
+            OKVizUtility.t([this.meta.name, this.meta.version], this.element, options, this.host, {
                 'cd1': this.model.settings.colorBlind.vision,
-                'cd5': (this.model.dataPoints[0].target !== null),
-                'cd6': false, //TODO Change when Legend will be available
+                'cd5': (this.model.dataPoints[0].target !== null)
             });
 
             //Color Blind module
@@ -756,6 +854,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
                     objectEnumeration.push({
                         objectName: objectName,
                         properties: {
+                            "showAllPoints": this.model.settings.hiLoPoints.showAllPoints,
                             "hiShow": this.model.settings.hiLoPoints.hiShow,
                             "hiFill": this.model.settings.hiLoPoints.hiFill,
                             "loShow": this.model.settings.hiLoPoints.loShow,
