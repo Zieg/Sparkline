@@ -10780,7 +10780,11 @@ var powerbi;
                         element.selectAll('#visionFilter').remove();
                         element.append('svg')
                             .attr('id', 'visionFilter')
-                            .style('position', 'absolute')
+                            .style({
+                            'position': 'absolute',
+                            'width': 0,
+                            'height': 0
+                        })
                             .html(visionDefs);
                         element.style({
                             'filter': 'url(#vision' + vision + ')',
@@ -11045,7 +11049,7 @@ var powerbi;
                     function Visual(options) {
                         this.meta = {
                             name: 'Sparkline',
-                            version: '1.0.4',
+                            version: '1.0.5',
                             dev: false
                         };
                         console.log('%c' + this.meta.name + ' by OKViz ' + this.meta.version + (this.meta.dev ? ' (BETA)' : ''), 'font-weight:bold');
@@ -11395,7 +11399,8 @@ var powerbi;
                         }
                         PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C.OKVizUtility.t([this.meta.name, this.meta.version], this.element, options, this.host, {
                             'cd1': this.model.settings.colorBlind.vision,
-                            'cd5': (this.model.dataPoints[0].target !== null)
+                            'cd5': (this.model.dataPoints[0].target !== null),
+                            'cd15': this.meta.dev
                         });
                         //Color Blind module
                         PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C.OKVizUtility.applyColorBlindVision(this.model.settings.colorBlind.vision, this.element);
@@ -11512,7 +11517,7 @@ var powerbi;
                 name: 'PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C',
                 displayName: 'Sparkline by OKViz',
                 class: 'Visual',
-                version: '1.0.4',
+                version: '1.0.5',
                 apiVersion: '1.5.0',
                 create: function (options) { return new powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C.Visual(options); },
                 custom: true

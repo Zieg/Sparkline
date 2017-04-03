@@ -346,7 +346,7 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
 
             this.meta = {
                 name: 'Sparkline',
-                version: '1.0.4',
+                version: '1.0.5',
                 dev: false
             };
             console.log('%c' + this.meta.name + ' by OKViz ' + this.meta.version + (this.meta.dev ? ' (BETA)' : ''), 'font-weight:bold');
@@ -763,7 +763,8 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
 
             OKVizUtility.t([this.meta.name, this.meta.version], this.element, options, this.host, {
                 'cd1': this.model.settings.colorBlind.vision,
-                'cd5': (this.model.dataPoints[0].target !== null)
+                'cd5': (this.model.dataPoints[0].target !== null),
+                'cd15': this.meta.dev
             });
 
             //Color Blind module

@@ -18,7 +18,11 @@ module powerbi.extensibility.visual.PBI_CV_25997FEB_F466_44FA_B562_AC4063283C4C 
             element.selectAll('#visionFilter').remove();
             element.append('svg')
                 .attr('id', 'visionFilter')
-                .style('position', 'absolute')
+                .style({
+                    'position': 'absolute',
+                    'width': 0,
+                    'height': 0
+                })
                 .html(visionDefs);
 
             element.style({
