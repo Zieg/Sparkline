@@ -346,7 +346,7 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Sparkline',
-                version: '1.0.5',
+                version: '1.0.6',
                 dev: false
             };
             console.log('%c' + this.meta.name + ' by OKViz ' + this.meta.version + (this.meta.dev ? ' (BETA)' : ''), 'font-weight:bold');
@@ -357,12 +357,13 @@ module powerbi.extensibility.visual {
             this.model = { dataPoints: [], settings: <VisualSettings>{} };
 
             this.element = d3.select(options.element);
-             
         }
         
         public update(options: VisualUpdateOptions) {
 
             this.model = visualTransform(options, this.host);
+
+            this.element.selectAll('div, svg').remove();
             if (this.model.dataPoints.length == 0) return;
 
             //Formatter
@@ -380,8 +381,6 @@ module powerbi.extensibility.visual {
             let slotPadding = {x: 3 + pointRay, y: 2 + pointRay };
             let scrollbarMargin = 10;
             
-
-            this.element.selectAll('div, svg').remove();
             let containerSize = {
                 width: options.viewport.width - margin.left - margin.right,
                 height: options.viewport.height - margin.top - margin.bottom
@@ -692,6 +691,7 @@ module powerbi.extensibility.visual {
 
                                         (<Event>d3.event).stopPropagation();
                                     });  
+                             
 
                                 self.tooltipServiceWrapper.addTooltip(circle, 
                                     function(tooltipEvent: TooltipEventArgs<TooltipEnabledDataPoint>){
@@ -714,8 +714,22 @@ module powerbi.extensibility.visual {
                                 svgContainer.selectAll('.point:not(.fixed):not(.keep)').remove();
                             }, 500);
                         });
-
                     }
+
+                    container.on('click', function(){ 
+                        self.selectionManager.clear();
+
+                        d3.selectAll('.sparkline').attr({ 'stroke-opacity':  1 });
+                        if (self.model.settings.hiLoPoints.showAllPoints) {
+                            d3.selectAll('.point').attr({ 'fill-opacity': 1});
+
+                        } else {
+                            d3.selectAll('.point.fixed').attr({ 'fill-opacity': 1 });
+                            d3.selectAll('.point.keep').classed('keep', false);
+                            d3.selectAll('.point:not(.fixed):not(.keep)').remove();
+                        }
+                        (<Event>d3.event).stopPropagation();
+                    });
 
                     if (this.model.settings.label.show) {
 
