@@ -278,7 +278,7 @@ module powerbi.extensibility.visual {
                                     .createSelectionId());
                                 axis.push(OKVizUtility.makeMeasureReadable(dataValue.source.groupName));
 
-                                if (value && !isNaN(value) && (settings.value.aggregate == 'sum' || settings.value.aggregate == 'avg')) {
+                                if (value !== null && !isNaN(value) && (settings.value.aggregate == 'sum' || settings.value.aggregate == 'avg')) {
                                     displayValue += value;
                                 } 
                             }
@@ -298,10 +298,10 @@ module powerbi.extensibility.visual {
                     }
 
                 }
-                
+
                 if (settings.value.aggregate == 'cur') {
-                    for (let v = values.length - 1; v > 0; v--) {
-                        if (values[v] && !isNaN(values[v])) {
+                    for (let v = values.length - 1; v >= 0; v--) {
+                        if (values[v] !== null && !isNaN(values[v])) {
                             displayValue = values[v];
                             break;
                         }
@@ -346,7 +346,7 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Sparkline',
-                version: '1.0.6',
+                version: '1.0.7',
                 dev: false
             };
             console.log('%c' + this.meta.name + ' by OKViz ' + this.meta.version + (this.meta.dev ? ' (BETA)' : ''), 'font-weight:bold');
