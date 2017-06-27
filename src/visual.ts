@@ -154,15 +154,15 @@ module powerbi.extensibility.visual {
     function visualTransform(options: VisualUpdateOptions, host: IVisualHost): VisualViewModel {
 
         //Get DataViews
-        var dataViews = options.dataViews;
-        var hasDataViews = (dataViews && dataViews[0]);
-        var hasCategoricalData = (hasDataViews && dataViews[0].categorical && dataViews[0].categorical.values);
-        var hasSettings = (hasDataViews && dataViews[0].metadata && dataViews[0].metadata.objects);
+        let dataViews = options.dataViews;
+        let hasDataViews = (dataViews && dataViews[0]);
+        let hasCategoricalData = (hasDataViews && dataViews[0].categorical && dataViews[0].categorical.values);
+        let hasSettings = (hasDataViews && dataViews[0].metadata && dataViews[0].metadata.objects);
 
         //Get Settings
-        var settings: VisualSettings = defaultSettings();
+        let settings: VisualSettings = defaultSettings();
         if (hasSettings) {
-            var objects = dataViews[0].metadata.objects;
+            let objects = dataViews[0].metadata.objects;
             settings = {
                 label: {
                     show: getValue<boolean>(objects, "label", "show", settings.label.show),
@@ -218,16 +218,16 @@ module powerbi.extensibility.visual {
         }
 
         //Get DataPoints
-        var dataPoints: VisualDataPoint[] = [];
+        let dataPoints: VisualDataPoint[] = [];
         if (hasCategoricalData) {
-            var dataCategorical = dataViews[0].categorical;
+            let dataCategorical = dataViews[0].categorical;
 
-            var hasCategoryFilled = (dataCategorical.categories && dataCategorical.categories[0]);
-            var hasMultipleMeasuresWithSameRole = false;
+            let hasCategoryFilled = (dataCategorical.categories && dataCategorical.categories[0]);
+            let hasMultipleMeasuresWithSameRole = false;
 
-            var categories = [];
+            let categories = [];
             if (hasCategoryFilled) {
-                var category = dataCategorical.categories[0];
+                let category = dataCategorical.categories[0];
                 for (let i = 0; i < category.values.length; i++) {
                     categories.push(category.values[i]);
                 }
@@ -346,7 +346,7 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Sparkline',
-                version: '1.0.7',
+                version: '1.0.8',
                 dev: false
             };
             console.log('%c' + this.meta.name + ' by OKViz ' + this.meta.version + (this.meta.dev ? ' (BETA)' : ''), 'font-weight:bold');
@@ -373,7 +373,8 @@ module powerbi.extensibility.visual {
                 value: this.model.settings.value.unit,
                 precision: this.model.settings.value.precision,
                 displayUnitSystemType: 2,
-                allowFormatBeautification: false
+                allowFormatBeautification: false,
+                cultureSelector: this.host.locale
             });
 
             let pointRay = (this.model.settings.line.weight * 2); //(this.model.settings.hiLoPoints.showAllPoints || this.model.settings.hiLoPoints.curShow || this.model.settings.hiLoPoints.hiShow || this.model.settings.hiLoPoints.loShow ? this.model.settings.line.weight * 2 : 0);
@@ -790,8 +791,8 @@ module powerbi.extensibility.visual {
         }
 
         public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-            var objectName = options.objectName;
-            var objectEnumeration: VisualObjectInstance[] = [];
+            let objectName = options.objectName;
+            let objectEnumeration: VisualObjectInstance[] = [];
 
             switch(objectName) {
                 case 'label':
