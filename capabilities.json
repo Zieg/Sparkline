@@ -29,6 +29,11 @@
             "displayName": "Target Area Max",
             "name": "targetRangeMax",
             "kind": "Measure"
+        },
+        {
+            "displayName": "Tooltips",
+            "name": "tooltips",
+            "kind": "Measure"
         }
     ],
     "dataViewMappings": [
@@ -55,7 +60,8 @@
                             { "bind": { "to": "measure" } },
                             { "bind": { "to": "target" } },
                             { "bind": { "to": "targetRangeMin" } },
-                            { "bind": { "to": "targetRangeMax" } }
+                            { "bind": { "to": "targetRangeMax" } },
+                            { "bind": { "to": "tooltips" } }
                         ],
                         "dataReductionAlgorithm": {
                             "top": { 
@@ -92,6 +98,105 @@
                             "fontSize": true
                         }
                    }
+                },
+                "fontFamily": {
+                    "displayName": "Font family",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Arial",
+                                "value": "Arial"
+                            },
+                            {
+                                "displayName": "Arial Black",
+                                "value": "\"Arial Black\""
+                            },
+                            {
+                                "displayName": "Arial Unicode MS",
+                                "value": "\"Arial Unicode MS\""
+                            },
+                            {
+                                "displayName": "Calibri",
+                                "value": "Calibri"
+                            },
+                            {
+                                "displayName": "Cambria",
+                                "value": "Cambria"
+                            },
+                            {
+                                "displayName": "Cambria Math",
+                                "value": "\"Cambria Math\""
+                            },
+                            {
+                                "displayName": "Candara",
+                                "value": "Candara"
+                            },
+                            {
+                                "displayName": "Comic Sans MS",
+                                "value": "\"Comic Sans MS\""
+                            },
+                            {
+                                "displayName": "Consolas",
+                                "value": "Consolas"
+                            },
+                            {
+                                "displayName": "Constantia",
+                                "value": "Constantia"
+                            },
+                            {
+                                "displayName": "Corbel",
+                                "value": "Corbel"
+                            },
+                            {
+                                "displayName": "Courier New",
+                                "value": "\"Courier New\""
+                            },
+                            {
+                                "displayName": "Georgia",
+                                "value": "Georgia"
+                            },
+                            {
+                                "displayName": "Lucida Sans Unicode",
+                                "value": "\"Lucida Sans Unicode\""
+                            },
+                            {
+                                "displayName": "Segoe (Bold)",
+                                "value": "\"Segoe UI Bold\", wf_segoe-ui_bold, helvetica, arial, sans-serif"
+                            },
+                            {
+                                "displayName": "Segoe UI",
+                                "value": "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif"
+                            },
+                            {
+                                "displayName": "Segoe UI Light",
+                                "value": "\"Segoe UI Light\", wf_segoe-ui_bold, helvetica, arial, sans-serif"
+                            },
+                            {
+                                "displayName": "Symbol",
+                                "value": "Symbol"
+                            },
+                            {
+                                "displayName": "Tahoma",
+                                "value": "Tahoma"
+                            },
+                            {
+                                "displayName": "Times New Roman",
+                                "value": "\"Times New Roman\""
+                            },
+                            {
+                                "displayName": "Trebuchet MS",
+                                "value": "\"Trebuchet MS\""
+                            },
+                            {
+                                "displayName": "Verdana",
+                                "value": "Verdana"
+                            },
+                            {
+                                "displayName": "Wingdings",
+                                "value": "Wingdings"
+                            }
+                        ]
+                    }
                 },
                 "fill": {
                     "displayName": "Color",
@@ -147,6 +252,109 @@
                         }
                    }
                 },
+                "fontFamily": {
+                    "displayName": "Font family",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "displayName": "Arial",
+                                "value": "Arial"
+                            },
+                            {
+                                "displayName": "Arial Black",
+                                "value": "\"Arial Black\""
+                            },
+                            {
+                                "displayName": "Arial Unicode MS",
+                                "value": "\"Arial Unicode MS\""
+                            },
+                            {
+                                "displayName": "Calibri",
+                                "value": "Calibri"
+                            },
+                            {
+                                "displayName": "Cambria",
+                                "value": "Cambria"
+                            },
+                            {
+                                "displayName": "Cambria Math",
+                                "value": "\"Cambria Math\""
+                            },
+                            {
+                                "displayName": "Candara",
+                                "value": "Candara"
+                            },
+                            {
+                                "displayName": "Comic Sans MS",
+                                "value": "\"Comic Sans MS\""
+                            },
+                            {
+                                "displayName": "Consolas",
+                                "value": "Consolas"
+                            },
+                            {
+                                "displayName": "Constantia",
+                                "value": "Constantia"
+                            },
+                            {
+                                "displayName": "Corbel",
+                                "value": "Corbel"
+                            },
+                            {
+                                "displayName": "Courier New",
+                                "value": "\"Courier New\""
+                            },
+                            {
+                                "displayName": "Georgia",
+                                "value": "Georgia"
+                            },
+                            {
+                                "displayName": "Lucida Sans Unicode",
+                                "value": "\"Lucida Sans Unicode\""
+                            },
+                            {
+                                "displayName": "Segoe (Bold)",
+                                "value": "\"Segoe UI Bold\", wf_segoe-ui_bold, helvetica, arial, sans-serif"
+                            },
+                            {
+                                "displayName": "Segoe UI",
+                                "value": "\"Segoe UI\", wf_segoe-ui_normal, helvetica, arial, sans-serif"
+                            },
+                            {
+                                "displayName": "Segoe UI Light",
+                                "value": "\"Segoe UI Light\", wf_segoe-ui_bold, helvetica, arial, sans-serif"
+                            },
+                            {
+                                "displayName": "Symbol",
+                                "value": "Symbol"
+                            },
+                            {
+                                "displayName": "Tahoma",
+                                "value": "Tahoma"
+                            },
+                            {
+                                "displayName": "Times New Roman",
+                                "value": "\"Times New Roman\""
+                            },
+                            {
+                                "displayName": "Trebuchet MS",
+                                "value": "\"Trebuchet MS\""
+                            },
+                            {
+                                "displayName": "Verdana",
+                                "value": "Verdana"
+                            },
+                            {
+                                "displayName": "Wingdings",
+                                "value": "Wingdings"
+                            },
+                            {
+                                "displayName": "wf_standard-font",
+                                "value": "wf_standard-font,helvetica,arial,sans-serif"
+                            }
+                        ]
+                    }
+                },
                 "fill": {
                     "displayName": "Color",
                     "type": {
@@ -171,74 +379,101 @@
                    "type": {
                        "numeric": true
                    }
+                },
+                "locale": {
+                    "displayName": "Culture code",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "text": true
+                    }
                 }
             }
         },
         "line": {
             "displayName": "Line",
-             "properties": {
-                  "axis": {
-                     "displayName": "Missing data points",
-                     "type": {
-                         "enumeration": [
+            "properties": {
+                "axis": {
+                    "displayName": "Missing data points",
+                    "type": {
+                        "enumeration": [
                             {
                                 "displayName": "Ignore",
                                 "value": "ignore"
                             },
-                             {
+                                {
                                 "displayName": "Set to zero",
                                 "value": "setToZero"
                             }
-                         ]
-                     }
-                 },
-                 "kind": {
-                     "displayName": "Appearance",
-                     "type": {
-                         "enumeration": [
-                            {
-                                "displayName": "Straight",
-                                "value": "linear"
-                            },
-                            {
-                                "displayName": "Monotone",
-                                "value": "monotone"
-                            },
-                            {
-                                "displayName": "Smooth",
-                                "value": "cardinal"
-                            },
-                            {
-                                "displayName": "Step",
-                                "value": "step-before"
-                             }
-                         ]
-                     }
-                 },
-                 "fill": {
-                     "displayName": "Color",
-                     "type": {
-                         "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                         }
-                     }
-                 },
-                 "weight": {
-                    "displayName": "Weight",
-                    "type": {
-                        "numeric": true
+                        ]
                     }
-                 },
-                 "minHeight": {
-                    "displayName": "Min height",
+                },
+                "start": {
+                    "displayName": "Y-Axis Start",
                     "placeHolderText": "Auto",
                     "type": {
                         "numeric": true
                     }
-                 }
-             }
+                },
+                "end": {
+                    "displayName": "Y-Axis End",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "baseline": {
+                    "displayName": "Baseline at 0",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "kind": {
+                    "displayName": "Appearance",
+                    "type": {
+                        "enumeration": [
+                        {
+                            "displayName": "Straight",
+                            "value": "linear"
+                        },
+                        {
+                            "displayName": "Monotone",
+                            "value": "monotone"
+                        },
+                        {
+                            "displayName": "Smooth",
+                            "value": "cardinal"
+                        },
+                        {
+                            "displayName": "Step",
+                            "value": "step-before"
+                            }
+                        ]
+                    }
+                },
+                "fill": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "weight": {
+                    "displayName": "Weight",
+                    "type": {
+                        "numeric": true
+                    }
+                },
+                "minHeight": {
+                    "displayName": "Mininum category width",
+                    "placeHolderText": "Auto",
+                    "type": {
+                        "numeric": true
+                    }
+                }
+            }
         }, 
         "area": {
             "displayName": "Area",
@@ -351,8 +586,7 @@
                  }
              }
         },
-        
-         "colorBlind": {
+        "colorBlind": {
             "displayName": "Color Blindness by OKViz",
             "properties": {
                 "vision": {

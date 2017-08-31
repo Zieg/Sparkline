@@ -50,6 +50,7 @@ module powerbi.extensibility.visual {
         values: any[];
         identities: any[];
         axis: any[];
+        tooltips: any[];
         format?: string;
         target: VisualDataPointTarget;
         category?: string;
@@ -63,6 +64,7 @@ module powerbi.extensibility.visual {
             show: boolean;
             text: string;
             fontSize: number;
+            fontFamily: string;
             fill: Fill;
             autoSize: boolean;
         };
@@ -70,9 +72,11 @@ module powerbi.extensibility.visual {
             show: boolean;
             aggregate: string;
             fontSize: number;
+            fontFamily: string;
             fill: Fill;
             unit?: number;
             precision?: number; 
+            locale?: string;
         };
         line: {
             axis: string,
@@ -80,6 +84,9 @@ module powerbi.extensibility.visual {
             fill: Fill;
             weight: number;
             minHeight?: number; 
+            start?: number;
+            end?: number;
+            baseline: boolean;
         };
         area: {
             show: boolean;
@@ -107,36 +114,40 @@ module powerbi.extensibility.visual {
     function defaultSettings(): VisualSettings {
 
         return {
-           label: {
+            label: {
                show: true,
                text: '',
                fontSize: 9,
+               fontFamily: '"Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif',
                fill: {solid: { color: "#777" } },
                autoSize: true
-           },
-           value: {
+            },
+            value: {
                show: false,
                aggregate: 'cur',
                fontSize: 9,
+               fontFamily: 'wf_standard-font,helvetica,arial,sans-serif',
                fill: {solid: { color: "#777" } },
-               unit: 0
-           },
-           line: {
+               unit: 0,
+               locale: ""
+            },
+            line: {
                axis: 'ignore',
                kind: 'monotone',
                fill: {solid: { color: "#333" } },
-               weight: 2
-           },
-           area: {
+               weight: 2,
+               baseline: false
+            },
+            area: {
                show: false,
                fill: { solid: { color: "#CCC" } },
                transparency: 50
-           },
-           target: {
+            },
+            target: {
                 fill: {solid: { color: "#F2C811" } },
                 rangeFill: {solid: { color: "#EEE" } }
-           },
-           hiLoPoints: {
+            },
+            hiLoPoints: {
                showAllPoints: false,
                hiShow: true,
                hiFill: {solid: { color: "#399599" } },
@@ -144,7 +155,7 @@ module powerbi.extensibility.visual {
                loFill: {solid: { color: "#FD625E" } },
                curShow: false,
                curFill: {solid: { color: "#333" } }
-           },
+            },
             colorBlind: {
                 vision: "Normal"
             }
@@ -168,6 +179,7 @@ module powerbi.extensibility.visual {
                     show: getValue<boolean>(objects, "label", "show", settings.label.show),
                     text: getValue<string>(objects, "label", "text", settings.label.text),
                     fontSize: getValue<number>(objects, "label", "fontSize", settings.label.fontSize),
+                    fontFamily: getValue<string>(objects, "label", "fontFamily", settings.label.fontFamily),
                     fill: getValue<Fill>(objects, "label", "fill", settings.label.fill),
                     autoSize: getValue<boolean>(objects, "label", "autoSize", settings.label.autoSize)
                 },
@@ -175,16 +187,21 @@ module powerbi.extensibility.visual {
                     show: getValue<boolean>(objects, "value", "show", settings.value.show),
                     aggregate: getValue<string>(objects, "value", "aggregate", settings.value.aggregate),
                     fontSize: getValue<number>(objects, "value", "fontSize", settings.value.fontSize),
+                    fontFamily: getValue<string>(objects, "value", "fontFamily", settings.value.fontFamily),
                     fill: getValue<Fill>(objects, "value", "fill", settings.value.fill),
                     unit: getValue<number>(objects, "value", "unit", settings.value.unit),
-                    precision: getValue<number>(objects, "value", "precision", settings.value.precision)
+                    precision: getValue<number>(objects, "value", "precision", settings.value.precision),
+                    locale: getValue<string>(objects, "value", "locale", settings.value.locale),
                 },
                 line: {
                     axis: getValue<string>(objects, "line", "axis", settings.line.axis),
                     kind: getValue<string>(objects, "line", "kind", settings.line.kind),
                     fill: getValue<Fill>(objects, "line", "fill", settings.line.fill),
                     weight: getValue<number>(objects, "line", "weight", settings.line.weight),
-                    minHeight: getValue<number>(objects, "line", "minHeight", settings.line.minHeight)
+                    minHeight: getValue<number>(objects, "line", "minHeight", settings.line.minHeight),
+                    start: getValue<number>(objects, "line", "start", settings.line.start),
+                    end: getValue<number>(objects, "line", "end", settings.line.end),
+                    baseline: getValue<boolean>(objects, "line", "baseline", settings.line.baseline),
                 },
                 area: {
                     show: getValue<boolean>(objects, "area", "show", settings.area.show),
@@ -204,7 +221,6 @@ module powerbi.extensibility.visual {
                     curShow: getValue<boolean>(objects, "hiLoPoints", "curShow", settings.hiLoPoints.curShow),
                     curFill: getValue<Fill>(objects, "hiLoPoints", "curFill", settings.hiLoPoints.curFill)
                 },
-
                 colorBlind: {
                      vision: getValue<string>(objects, "colorBlind", "vision", settings.colorBlind.vision),
                 }
@@ -215,6 +231,8 @@ module powerbi.extensibility.visual {
             if (settings.line.minHeight < 1) settings.line.minHeight = 1;
             if (settings.value.precision < 0) settings.value.precision = 0;
             if (settings.value.precision > 5) settings.value.precision = 5;
+            
+            if (settings.value.locale == '') settings.value.locale = host.locale;
         }
 
         //Get DataPoints
@@ -256,6 +274,9 @@ module powerbi.extensibility.visual {
                 let identities = []
                 let axis = [];
                 let format = null;
+                let tooltips = [];
+                let tooltipsItems: VisualTooltipDataItem[] = [];
+                let tooltipsWalker = null;
                 let target: VisualDataPointTarget = {value: null, min: null, max:null };
                 for (let ii = 0; ii < dataCategorical.values.length; ii++) {
 
@@ -295,9 +316,35 @@ module powerbi.extensibility.visual {
                         if (dataValue.source.roles['targetRangeMax'] && !target.max) {
                             target.max = value;
                         }
+
+                        if (dataValue.source.roles['tooltips']) {
+                            if (!tooltipsWalker) {
+                                tooltipsWalker = dataValue.source.displayName;
+                            } else if (dataValue.source.displayName == tooltipsWalker) {
+                                tooltips.push(tooltipsItems);
+                                tooltipsItems = [];
+                            }
+
+                            tooltipsItems.push(<VisualTooltipDataItem>{
+                                displayName: dataValue.source.displayName,
+                                value : OKVizUtility.Formatter.format(value, {
+                                    format: dataValue.source.format,
+                                    formatSingleValues: (settings.value.unit == 0),
+                                    value: settings.value.unit,
+                                    precision: settings.value.precision,
+                                    displayUnitSystemType: 2,
+                                    allowFormatBeautification: false,
+                                    cultureSelector: settings.value.locale
+                                }),
+                                color: '#000',
+                                markerShape: 'circle'
+                            });     
+                        }
                     }
 
                 }
+
+                tooltips.push(tooltipsItems);
 
                 if (settings.value.aggregate == 'cur') {
                     for (let v = values.length - 1; v >= 0; v--) {
@@ -314,6 +361,7 @@ module powerbi.extensibility.visual {
                     values: values,
                     identities: identities, 
                     axis: axis,
+                    tooltips: tooltips,
                     format: format,
                     target: target,
                     category: categoryValue,
@@ -326,7 +374,7 @@ module powerbi.extensibility.visual {
             }
 
         }
- 
+
         return {
             dataPoints: dataPoints,
             settings: settings,
@@ -346,7 +394,7 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Sparkline',
-                version: '1.0.9',
+                version: '1.1.0',
                 dev: false
             };
             console.log('%c' + this.meta.name + ' by OKViz ' + this.meta.version + (this.meta.dev ? ' (BETA)' : ''), 'font-weight:bold');
@@ -365,7 +413,7 @@ module powerbi.extensibility.visual {
 
             this.element.selectAll('div, svg').remove();
             if (this.model.dataPoints.length == 0) return;
-
+            
             //Formatter
             let formatter = OKVizUtility.Formatter.getFormatter({
                 format: this.model.dataPoints[0].format,
@@ -374,7 +422,7 @@ module powerbi.extensibility.visual {
                 precision: this.model.settings.value.precision,
                 displayUnitSystemType: 2,
                 allowFormatBeautification: false,
-                cultureSelector: this.host.locale
+                cultureSelector: this.model.settings.value.locale
             });
 
             let pointRay = (this.model.settings.line.weight * 2); //(this.model.settings.hiLoPoints.showAllPoints || this.model.settings.hiLoPoints.curShow || this.model.settings.hiLoPoints.hiShow || this.model.settings.hiLoPoints.loShow ? this.model.settings.line.weight * 2 : 0);
@@ -397,7 +445,7 @@ module powerbi.extensibility.visual {
                     'margin-top': margin.top + 'px',
                     'margin-left': margin.left + 'px'
                 });
-            
+
             let minSlotHeight = this.model.settings.line.minHeight;
             if (!minSlotHeight) minSlotHeight = 16;
 
@@ -421,7 +469,7 @@ module powerbi.extensibility.visual {
                     if (this.model.settings.label.show) {
      
                         let fontSize = PixelConverter.fromPoint(this.model.settings.label.fontSize);
-                        let props = { text: dataPoint.category, fontFamily: 'sans-serif', fontSize: fontSize };
+                        let props = { text: dataPoint.category, fontFamily: this.model.settings.label.fontFamily, fontSize: fontSize };
 
                         let currentLabelWidth = TextUtility.measureTextWidth(props);
                         maxLabelWidth = Math.max(maxLabelWidth, currentLabelWidth);
@@ -430,9 +478,9 @@ module powerbi.extensibility.visual {
                     if (this.model.settings.value.show) {
                         let value = dataPoint.displayValue;
 
-                        let formattedValue = formatter.format(value); 
+                        let formattedValue = (formatter ? formatter.format(value) : value); 
                         let fontSize = PixelConverter.fromPoint(this.model.settings.value.fontSize);
-                        let props = { text: formattedValue, fontFamily:  "'wf_standard-font',helvetica,arial,sans-serif", fontSize: fontSize };
+                        let props = { text: formattedValue, fontFamily:  this.model.settings.value.fontFamily, fontSize: fontSize };
                         let currentValueWidth = TextUtility.measureTextWidth(props) + 5;
                         valueWidth = Math.max(valueWidth, currentValueWidth);
                     }
@@ -470,18 +518,23 @@ module powerbi.extensibility.visual {
 
                     let dataPoint = this.model.dataPoints[i];
 
-                    let topValue = {index: 0, value:0};
-                    let bottomValue = {index: 0, value:Infinity};
+                    let topValue = {indexes: [], value:0};
+                    let bottomValue = {indexes: [], value:Infinity};
                     for (let ii = 0; ii < dataPoint.values.length; ii++){
                         if (dataPoint.values[ii] > topValue.value) {
-                            topValue.index = ii;
+                            topValue.indexes = [ii];
                             topValue.value = dataPoint.values[ii];
+                        } else if (dataPoint.values[ii] == topValue.value) {
+                            topValue.indexes.push(ii);
                         }
                         if (dataPoint.values[ii] < bottomValue.value) {
-                            bottomValue.index = ii;
+                            bottomValue.indexes = [ii];
                             bottomValue.value = dataPoint.values[ii];
+                        } else if (dataPoint.values[ii] == bottomValue.value) {
+                            bottomValue.indexes.push(ii);
                         }
                     }
+  
                     //We didn't use the following function because we need Min/Max/Index in the array
                     //Math.max.apply(null, dataPoint.values);
 
@@ -489,10 +542,26 @@ module powerbi.extensibility.visual {
                         .domain([0, dataPoint.values.length - 1])
                         .range([labelWidth + slotPadding.x, sparklineSize.width + labelWidth + slotPadding.x]);
 
+                    let yStart = (typeof this.model.settings.line.start !== 'undefined' ? Math.min(bottomValue.value, this.model.settings.line.start) : bottomValue.value);
+
+                    let yEnd = (typeof this.model.settings.line.end !== 'undefined' ? Math.max(topValue.value, this.model.settings.line.end) : topValue.value);
+
                     let y = d3.scale.linear()
-                        .domain([topValue.value, bottomValue.value]) 
+                        .domain([yEnd, yStart]) 
                         .range([(i * slotSize.height) + slotPadding.y, (i * slotSize.height) + slotPadding.y + sparklineSize.height]);   
-                                
+                    
+                    if (this.model.settings.line.baseline && yStart == 0) {
+                            
+                        dataPointContainer.append('line')
+                            .classed('border', true)
+                            .attr('x1', labelWidth + slotPadding.x)
+                            .attr('x2', sparklineSize.width + slotPadding.x + labelWidth)
+                            .attr('y1', y(yStart))
+                            .attr('y2', y(yStart))
+                            .attr('stroke-width', 1)
+                            .attr('stroke', '#ddd');
+                    }
+
                     if (dataPoint.target.min && dataPoint.target.max) {
                         dataPointContainer.append('rect')
                             .classed('target', true)
@@ -502,7 +571,7 @@ module powerbi.extensibility.visual {
                             .attr('height', y(dataPoint.target.max))
                             .attr('fill', this.model.settings.target.rangeFill.solid.color);
                     }
-
+          
                     if (dataPoint.target.value) {
                         dataPointContainer.append('line')
                             .classed('target', true)
@@ -515,8 +584,6 @@ module powerbi.extensibility.visual {
 
                     }
                     
-                
-
                     let line = d3.svg.line()
                         .x(function(d: any,j: any) { 
                             return x(j); 
@@ -564,11 +631,12 @@ module powerbi.extensibility.visual {
                             svgContainer.append('circle')
                                 .classed('point', true)
                                 .data([[<VisualTooltipDataItem>{
-                                        header: dataPoint.axis[ii],
+                                        header: dataPoint.axis[ii] + (dataPoint.category != dataPoint.displayName ? ' (' + dataPoint.category + ')' : ''),
                                         displayName: dataPoint.displayName,
-                                        value: formatter.format(dataPoint.values[ii]),
-                                        color: (color.substr(1, 3) == '333' ? '#000' : color)
-                                    }]])
+                                        value: (formatter ? formatter.format(dataPoint.values[ii]) : dataPoint.values[ii]),
+                                        color: (color.substr(1, 3) == '333' ? '#000' : color),
+                                        markerShape: 'circle'
+                                    }].concat(dataPoint.tooltips[ii])])
                                 .attr('cx', x(ii))
                                 .attr('cy', y(dataPoint.values[ii]))
                                 .attr('r', pointRay)
@@ -590,6 +658,8 @@ module powerbi.extensibility.visual {
 
                         }
 
+                
+       
                         this.tooltipServiceWrapper.addTooltip(svgContainer.selectAll('.point'), 
                             function(tooltipEvent: TooltipEventArgs<number>){
                                 if (tooltipEvent)
@@ -598,6 +668,7 @@ module powerbi.extensibility.visual {
                             }, 
                             (tooltipEvent: TooltipEventArgs<number>) => null
                         );
+                    
 
                     } else {
 
@@ -614,23 +685,28 @@ module powerbi.extensibility.visual {
 
                         if (this.model.settings.hiLoPoints.hiShow) {
                             let color = this.model.settings.hiLoPoints.hiFill.solid.color;
-                            dataPointContainer.append('circle')
-                                .classed('point fixed', true)
-                                .attr('cx', x(topValue.index))
-                                .attr('cy', y(topValue.value))
-                                .attr('r', pointRay)
-                                .attr('fill', color);
+                            for (let xx = 0; xx < topValue.indexes.length; xx++) {
+                            
+                                dataPointContainer.append('circle')
+                                    .classed('point fixed', true)
+                                    .attr('cx', x(topValue.indexes[xx]))
+                                    .attr('cy', y(topValue.value))
+                                    .attr('r', pointRay)
+                                    .attr('fill', color);
+                            }
                         }
 
 
                         if (this.model.settings.hiLoPoints.loShow) {
                             let color = this.model.settings.hiLoPoints.loFill.solid.color;
-                            dataPointContainer.append('circle')
-                                .classed('point fixed', true)
-                                .attr('cx', x(bottomValue.index))
-                                .attr('cy', y(bottomValue.value))
-                                .attr('r', pointRay)
-                                .attr('fill', color);
+                            for (let xx = 0; xx < bottomValue.indexes.length; xx++) {
+                                dataPointContainer.append('circle')
+                                    .classed('point fixed', true)
+                                    .attr('cx', x(bottomValue.indexes[xx]))
+                                    .attr('cy', y(bottomValue.value))
+                                    .attr('r', pointRay)
+                                    .attr('fill', color);
+                            }
                         }
                     
 
@@ -697,11 +773,12 @@ module powerbi.extensibility.visual {
                                 self.tooltipServiceWrapper.addTooltip(circle, 
                                     function(tooltipEvent: TooltipEventArgs<TooltipEnabledDataPoint>){
                                         return [<VisualTooltipDataItem>{
-                                            header: dataPoint.axis[foundIndex],
-                                            displayName: dataPoint.category,
-                                            value: formatter.format(val),
-                                            color: (color.substr(1, 3) == '333' ? '#000' : color)
-                                        }]; 
+                                            header: dataPoint.axis[foundIndex] + (dataPoint.category != dataPoint.displayName ? ' (' + dataPoint.category + ')' : ''),
+                                            displayName: dataPoint.displayName,
+                                            value: (formatter ? formatter.format(val) : val),
+                                            color: (color.substr(1, 3) == '333' ? '#000' : color),
+                                            markerShape: 'circle'
+                                        }].concat(dataPoint.tooltips[foundIndex]); 
                                     }, null, true  
                                 );
                             }
@@ -741,13 +818,16 @@ module powerbi.extensibility.visual {
                             .classed('label', true);
 
                             let fontSize = PixelConverter.fromPoint(this.model.settings.label.fontSize);
-                            let props = { text: dataPoint.category, fontFamily: 'sans-serif', fontSize: fontSize };
+                            let props = { text: dataPoint.category, fontFamily: this.model.settings.label.fontFamily, fontSize: fontSize };
 
 
                             label.text(TextUtility.getTailoredTextOrDefault(props, labelWidth))
                             .attr('x', labelWidth)
                             .attr('y', (i * slotSize.height) + (slotSize.height / 2))
-                            .style('font-size', fontSize)
+                            .style({
+                                'font-size': fontSize,
+                                'font-family': this.model.settings.label.fontFamily
+                            })
                             .attr('text-anchor', 'end')
                             .attr('fill', this.model.settings.label.fill.solid.color);
                             
@@ -761,12 +841,12 @@ module powerbi.extensibility.visual {
                         let value = dataPoint.displayValue;
                         let fontSize = PixelConverter.fromPoint(this.model.settings.value.fontSize);
 
-                        label.text(formatter.format(value))
+                        label.text(formatter ? formatter.format(value) : value)
                             .attr('x', labelWidth + sparklineSize.width + (slotPadding.x * 2))
                             .attr('y', (i * slotSize.height) + (slotSize.height / 2))
                             .style({
                                 'font-size': fontSize,
-                                'font-family': "'wf_standard-font',helvetica,arial,sans-serif"
+                                'font-family': this.model.settings.value.fontFamily
                             })
                             .attr('fill', this.model.settings.value.fill.solid.color);
                     }
@@ -802,6 +882,7 @@ module powerbi.extensibility.visual {
                             "show": this.model.settings.label.show,
                             "text": this.model.settings.label.text,
                             "fontSize": this.model.settings.label.fontSize,
+                            "fontFamily": this.model.settings.label.fontFamily,
                             "autoSize": this.model.settings.label.autoSize,
                             "fill": this.model.settings.label.fill
                         },
@@ -817,9 +898,11 @@ module powerbi.extensibility.visual {
                             "show": this.model.settings.value.show,
                             "aggregate": this.model.settings.value.aggregate,
                             "fontSize": this.model.settings.value.fontSize,
+                            "fontFamily": this.model.settings.value.fontFamily,
+                            "fill": this.model.settings.value.fill,
                             "unit": this.model.settings.value.unit,
                             "precision": this.model.settings.value.precision,
-                            "fill": this.model.settings.value.fill
+                            "locale": this.model.settings.value.locale
                         },
                         selector: null
                     });
@@ -831,6 +914,9 @@ module powerbi.extensibility.visual {
                         objectName: objectName,
                         properties: {
                             "axis": this.model.settings.line.axis,
+                            "start": this.model.settings.line.start,
+                            "end": this.model.settings.line.end,
+                            "baseline": this.model.settings.line.baseline,
                             "kind": this.model.settings.line.kind,
                             "weight": this.model.settings.line.weight,
                             "minHeight": this.model.settings.line.minHeight,
@@ -882,7 +968,7 @@ module powerbi.extensibility.visual {
                     });
 
                     break;
-                
+
                 case 'colorBlind':
                     
                     objectEnumeration.push({

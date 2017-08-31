@@ -1,6 +1,6 @@
 /*
  * OKViz Utilities
- * v1.2.3
+ * v1.2.4
 */
 
 import valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
@@ -31,7 +31,10 @@ module powerbi.extensibility.visual {
 
                 let singleton = Formatter._instance;
 
-                let key = JSON.stringify(properties);
+                //Check if there is a valid format
+                if (!properties.hasOwnProperty('format') || typeof properties.format === "undefined") return false;
+
+                let key = JSON.stringify(properties); //.replace(/\W/g,'_');
                 let pbiFormatter: any;
                 if (key in singleton._cachedFormatters) {
                     pbiFormatter = singleton._cachedFormatters[key];
@@ -39,13 +42,17 @@ module powerbi.extensibility.visual {
                     pbiFormatter = valueFormatter.create(properties);
                     singleton._cachedFormatters[key] = pbiFormatter;
                 }
+
                 return pbiFormatter;
             }
 
             public static format(value, properties) {
                 
                 let formatter: any = Formatter.getFormatter(properties);
-                return formatter.format(value);
+                if (formatter)
+                    return formatter.format(value);
+
+                return value; 
             }
 
             public static getAxisDatesFormatter(dateFrom, dateTo?) {
