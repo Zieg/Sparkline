@@ -463,7 +463,7 @@
                 "weight": {
                     "displayName": "Weight",
                     "type": {
-                        "numeric": true
+                        "integer": true
                     }
                 },
                 "minHeight": {
@@ -497,7 +497,7 @@
                  "transparency": {
                     "displayName": "Transparency",
                     "type": {
-                        "numeric": true
+                        "integer": true
                     }
                  }
              }
@@ -635,6 +635,17 @@
                             }
                          ]
                      }
+                }
+            }
+        },
+        "about": {
+            "displayName": "About",
+            "properties": {
+                "version": {
+                    "displayName": "Version",
+                    "type": {
+                        "text": true
+                    }
                 }
             }
         },

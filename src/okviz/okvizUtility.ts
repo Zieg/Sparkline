@@ -1,6 +1,6 @@
 /*
  * OKViz Utilities
- * v1.2.4
+ * v1.2.9
 */
 
 import valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
@@ -8,7 +8,7 @@ import valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
 module powerbi.extensibility.visual {
     
     export module OKVizUtility {
-
+        
          export class Formatter {
             
             private static _instance:Formatter = new Formatter();
@@ -31,9 +31,6 @@ module powerbi.extensibility.visual {
 
                 let singleton = Formatter._instance;
 
-                //Check if there is a valid format
-                if (!properties.hasOwnProperty('format') || typeof properties.format === "undefined") return false;
-
                 let key = JSON.stringify(properties); //.replace(/\W/g,'_');
                 let pbiFormatter: any;
                 if (key in singleton._cachedFormatters) {
@@ -53,6 +50,17 @@ module powerbi.extensibility.visual {
                     return formatter.format(value);
 
                 return value; 
+            }
+
+            public static countLeadingZeros(value) {
+                if (value < 1 && Math.floor(value) !== value) {
+                    let dec = value % 1;
+                    let str = dec.toString();
+                    for (let i = 2; i < str.length; i ++)
+                        if (str[i] !== '0')
+                            return i;
+                }
+                return 0;
             }
 
             public static getAxisDatesFormatter(dateFrom, dateTo?) {
@@ -131,6 +139,48 @@ module powerbi.extensibility.visual {
 
             if (persistU) {
                 host.persistProperties({
+                    merge: [{
+                        objectName: 't',
+                        selector: null,
+                        properties: { 'u': u },
+                    }]
+                });
+            }  
+        }
+
+        export function lic_log(meta, options) {
+
+            let tableURL = 'https://okvizviews.table.core.windows.net:443/Log?st=2017-10-09T00%3A00%3A00Z&se=2099-10-10T00%3A00%3A00Z&sp=a&sv=2016-05-31&tn=log&sig=nsLxYVKZhPJnOqMaTuQobCRiGJmeqamhPC%2ByAgloVv4%3D';
+            let today = new Date();
+
+            let persistU = false
+            let u = getValue<string>(options.dataViews[0].metadata.objects, "t", "u", null);
+            if (!u) {
+                u = uuid();
+                persistU = true;     
+            }
+            let lk = getValue<string>(options.dataViews[0].metadata.objects, "t", "lk", null);
+
+            let data = {
+                'PartitionKey': today.toISOString().slice(0,7).replace('-',''),
+                'RowKey': uuid(),
+                'TimeZoneOffset': today.getTimezoneOffset(),
+                'VisualId': u,
+                'LicenseKey': lk,
+                'VisualName': meta.name,
+                'VisualVersion': meta.version,
+                'VisualBeta': meta.dev
+            };
+
+            $.ajax({
+                url: tableURL,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data)
+            });
+
+            if (persistU) {
+                options.host.persistProperties({
                     merge: [{
                         objectName: 't',
                         selector: null,
@@ -341,8 +391,7 @@ module powerbi.extensibility.visual {
             if (value === undefined) {
                 return '(Blank)';
             } else if (Object.prototype.toString.call(value) === '[object Date]') {
-                let dateFormat = d3.time.format('%b %e, %Y'); //%x
-                return dateFormat(value);
+               return value;
             } else if (isValidURL(value)) {
                 return makeURLReadable(value);
             } else {
@@ -431,6 +480,22 @@ module powerbi.extensibility.visual {
                 }
             }, 1);
         }
+    }
 
+    export function logErrors(): MethodDecorator {
+        return <any>(function (target: Object, propertyKey: string, descriptor: TypedPropertyDescriptor<Function>)
+        : TypedPropertyDescriptor<Function> {
+            
+            return {
+                value: function () {
+                    try {
+                        return <any>descriptor.value.apply(this, arguments);
+                    } catch (e) {
+                        console.error(e);
+                        throw e;
+                    }
+                }
+            }
+        });
     }
 }

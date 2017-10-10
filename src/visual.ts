@@ -226,12 +226,6 @@ module powerbi.extensibility.visual {
                 }
             }
 
-            //Limit some properties
-            if (settings.line.weight < 1) settings.line.weight = 1;
-            if (settings.line.minHeight < 1) settings.line.minHeight = 1;
-            if (settings.value.precision < 0) settings.value.precision = 0;
-            if (settings.value.precision > 5) settings.value.precision = 5;
-            
             if (settings.value.locale == '') settings.value.locale = host.locale;
         }
 
@@ -387,6 +381,7 @@ module powerbi.extensibility.visual {
         private selectionManager: ISelectionManager;
         private tooltipServiceWrapper: tooltip.ITooltipServiceWrapper;
         private model: VisualViewModel;
+        private licced: boolean;
 
         private element: d3.Selection<HTMLElement>;
 
@@ -394,10 +389,9 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Sparkline',
-                version: '1.1.0',
+                version: '1.1.1',
                 dev: false
             };
-            console.log('%c' + this.meta.name + ' by OKViz ' + this.meta.version + (this.meta.dev ? ' (BETA)' : ''), 'font-weight:bold');
 
             this.host = options.host;
             this.selectionManager = options.host.createSelectionManager();
@@ -407,23 +401,13 @@ module powerbi.extensibility.visual {
             this.element = d3.select(options.element);
         }
         
+        //@logErrors() //TODO Don't use in production
         public update(options: VisualUpdateOptions) {
 
             this.model = visualTransform(options, this.host);
 
             this.element.selectAll('div, svg').remove();
             if (this.model.dataPoints.length == 0) return;
-            
-            //Formatter
-            let formatter = OKVizUtility.Formatter.getFormatter({
-                format: this.model.dataPoints[0].format,
-                formatSingleValues: (this.model.settings.value.unit == 0),
-                value: this.model.settings.value.unit,
-                precision: this.model.settings.value.precision,
-                displayUnitSystemType: 2,
-                allowFormatBeautification: false,
-                cultureSelector: this.model.settings.value.locale
-            });
 
             let pointRay = (this.model.settings.line.weight * 2); //(this.model.settings.hiLoPoints.showAllPoints || this.model.settings.hiLoPoints.curShow || this.model.settings.hiLoPoints.hiShow || this.model.settings.hiLoPoints.loShow ? this.model.settings.line.weight * 2 : 0);
             let margin = {top: 6, left: 6, bottom: 0, right: 0};
@@ -478,6 +462,16 @@ module powerbi.extensibility.visual {
                     if (this.model.settings.value.show) {
                         let value = dataPoint.displayValue;
 
+                        let formatter = OKVizUtility.Formatter.getFormatter({
+                            format: dataPoint.format,
+                            formatSingleValues: (this.model.settings.value.unit === 0),
+                            value: (this.model.settings.value.unit == 0 ? value : this.model.settings.value.unit),
+                            precision: this.model.settings.value.precision,
+                            displayUnitSystemType: 3,
+                            allowFormatBeautification: false,
+                            cultureSelector: this.model.settings.value.locale
+                        });
+
                         let formattedValue = (formatter ? formatter.format(value) : value); 
                         let fontSize = PixelConverter.fromPoint(this.model.settings.value.fontSize);
                         let props = { text: formattedValue, fontFamily:  this.model.settings.value.fontFamily, fontSize: fontSize };
@@ -517,6 +511,16 @@ module powerbi.extensibility.visual {
                                                 .style('pointer-events', 'all');
 
                     let dataPoint = this.model.dataPoints[i];
+
+                    let formatter = OKVizUtility.Formatter.getFormatter({
+                        format: this.model.dataPoints[0].format,
+                        formatSingleValues: (this.model.settings.value.unit === 0),
+                        value: (this.model.settings.value.unit == 0 ? this.model.dataPoints[0].displayValue : this.model.settings.value.unit),
+                        precision: this.model.settings.value.precision,
+                        displayUnitSystemType: 3,
+                        allowFormatBeautification: false,
+                        cultureSelector: this.model.settings.value.locale
+                    });
 
                     let topValue = {indexes: [], value:0};
                     let bottomValue = {indexes: [], value:Infinity};
@@ -862,6 +866,11 @@ module powerbi.extensibility.visual {
                 'cd15': this.meta.dev
             });
 
+            if (!this.licced) {
+                this.licced = true;
+                OKVizUtility.lic_log(this.meta, options);
+            }
+
             //Color Blind module
             OKVizUtility.applyColorBlindVision(this.model.settings.colorBlind.vision, this.element);
         }
@@ -904,6 +913,14 @@ module powerbi.extensibility.visual {
                             "precision": this.model.settings.value.precision,
                             "locale": this.model.settings.value.locale
                         },
+                        validValues: {
+                            "precision": {
+                                numberRange: {
+                                    min: 0,
+                                    max: 15
+                                }
+                            }
+                        },
                         selector: null
                     });
 
@@ -921,6 +938,19 @@ module powerbi.extensibility.visual {
                             "weight": this.model.settings.line.weight,
                             "minHeight": this.model.settings.line.minHeight,
                             "fill": this.model.settings.line.fill
+                        },
+                        validValues: {
+                            "weight": {
+                                numberRange: {
+                                    min: 1,
+                                    max: 20
+                                }
+                            },
+                            "minHeight": {
+                                numberRange: {
+                                    min: 1
+                                }
+                            }
                         },
                         selector: null
                     });
@@ -979,6 +1009,16 @@ module powerbi.extensibility.visual {
                         selector: null
                     });
 
+                    break;
+                
+                case 'about':
+                    objectEnumeration.push({
+                        objectName: objectName,
+                        properties: {
+                            "version": this.meta.version + (this.meta.dev ? ' BETA' : '')
+                        },
+                        selector: null
+                    });
                     break;
                 
             };
