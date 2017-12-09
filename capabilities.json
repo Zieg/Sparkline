@@ -400,9 +400,13 @@
                                 "displayName": "Ignore",
                                 "value": "ignore"
                             },
-                                {
+                            {
                                 "displayName": "Set to zero",
                                 "value": "setToZero"
+                            },
+                            {
+                                "displayName": "Set to null",
+                                "value": "setToNull"
                             }
                         ]
                     }

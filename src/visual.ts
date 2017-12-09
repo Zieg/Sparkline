@@ -277,12 +277,12 @@ module powerbi.extensibility.visual {
                     let dataValue = dataCategorical.values[ii];
                     
                     let value:any = dataValue.values[(hasMultipleMeasuresWithSameRole ? 0 : i)];
-                    if (value !== null || settings.line.axis === 'setToZero') { //This condition remove null values, but made comparison between sparklines inefficient
+                    if (value !== null || settings.line.axis !== 'ignore') { 
                         if (dataValue.source.roles['measure']) {
                             if (!hasMultipleMeasuresWithSameRole || dataValue.source.displayName == categoryValue) {
                                 format = dataValue.source.format;
                                 displayName = dataValue.source.displayName;
-
+                                if (settings.line.axis == 'setToZero' && value == null) value = 0;
                                 values.push(value);
                                 identities.push(hasCategoryFilled ?
                                     host.createSelectionIdBuilder()
@@ -370,8 +370,6 @@ module powerbi.extensibility.visual {
             }
 
         }
-
-        
 
         return {
             dataPoints: dataPoints,
@@ -529,17 +527,19 @@ module powerbi.extensibility.visual {
                     let topValue = {indexes: [], value:0};
                     let bottomValue = {indexes: [], value:Infinity};
                     for (let ii = 0; ii < dataPoint.values.length; ii++){
-                        if (dataPoint.values[ii] > topValue.value) {
-                            topValue.indexes = [ii];
-                            topValue.value = dataPoint.values[ii];
-                        } else if (dataPoint.values[ii] == topValue.value) {
-                            topValue.indexes.push(ii);
-                        }
-                        if (dataPoint.values[ii] < bottomValue.value) {
-                            bottomValue.indexes = [ii];
-                            bottomValue.value = dataPoint.values[ii];
-                        } else if (dataPoint.values[ii] == bottomValue.value) {
-                            bottomValue.indexes.push(ii);
+                        if (dataPoint.values[ii] != null) {
+                            if (dataPoint.values[ii] > topValue.value) {
+                                topValue.indexes = [ii];
+                                topValue.value = dataPoint.values[ii];
+                            } else if (dataPoint.values[ii] == topValue.value) {
+                                topValue.indexes.push(ii);
+                            }
+                            if (dataPoint.values[ii] < bottomValue.value) {
+                                bottomValue.indexes = [ii];
+                                bottomValue.value = dataPoint.values[ii];
+                            } else if (dataPoint.values[ii] == bottomValue.value) {
+                                bottomValue.indexes.push(ii);
+                            }
                         }
                     }
   
@@ -616,6 +616,9 @@ module powerbi.extensibility.visual {
                         .y(function(d: any) { 
                             return y(d); 
                         })
+                        .defined(function(d) {
+                            return (d !== null);
+                        })
                         .interpolate(this.model.settings.line.kind);
                     
                     if (this.model.settings.area.show) {
@@ -626,6 +629,9 @@ module powerbi.extensibility.visual {
                             .y0(((i + 1) * slotSize.height) - slotPadding.y)
                             .y1(function(d: any) { 
                                 return y(d); 
+                            })
+                            .defined(function(d) {
+                                return (d !== null);
                             })
                             .interpolate(this.model.settings.line.kind);
 
@@ -647,6 +653,8 @@ module powerbi.extensibility.visual {
                         
                         for (let ii = 0; ii < dataPoint.values.length; ii++) {
                             let val = dataPoint.values[ii];
+                            if (val == null) continue;
+
                             let color = this.model.settings.hiLoPoints.curFill.solid.color;
                             if (this.model.settings.hiLoPoints.hiShow && topValue.value == val)
                                 color = this.model.settings.hiLoPoints.hiFill.solid.color;
@@ -683,8 +691,6 @@ module powerbi.extensibility.visual {
                                 });
 
                         }
-
-                
        
                         this.tooltipServiceWrapper.addTooltip(svgContainer.selectAll('.point'), 
                             function(tooltipEvent: TooltipEventArgs<number>){
