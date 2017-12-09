@@ -275,6 +275,7 @@ module powerbi.extensibility.visual {
                 for (let ii = 0; ii < dataCategorical.values.length; ii++) {
 
                     let dataValue = dataCategorical.values[ii];
+                    
                     let value:any = dataValue.values[(hasMultipleMeasuresWithSameRole ? 0 : i)];
                     if (value !== null || settings.line.axis === 'setToZero') { //This condition remove null values, but made comparison between sparklines inefficient
                         if (dataValue.source.roles['measure']) {
@@ -312,19 +313,20 @@ module powerbi.extensibility.visual {
                         }
 
                         if (dataValue.source.roles['tooltips']) {
+
                             if (!tooltipsWalker) {
                                 tooltipsWalker = dataValue.source.displayName;
                             } else if (dataValue.source.displayName == tooltipsWalker) {
                                 tooltips.push(tooltipsItems);
                                 tooltipsItems = [];
                             }
-
+                            
                             tooltipsItems.push(<VisualTooltipDataItem>{
                                 displayName: dataValue.source.displayName,
                                 value : OKVizUtility.Formatter.format(value, {
                                     format: dataValue.source.format,
                                     formatSingleValues: (settings.value.unit == 0),
-                                    value: settings.value.unit,
+                                    value: String(settings.value.unit),
                                     precision: settings.value.precision,
                                     displayUnitSystemType: 2,
                                     allowFormatBeautification: false,
@@ -369,6 +371,8 @@ module powerbi.extensibility.visual {
 
         }
 
+        
+
         return {
             dataPoints: dataPoints,
             settings: settings,
@@ -389,7 +393,7 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Sparkline',
-                version: '1.1.1',
+                version: '1.1.2',
                 dev: false
             };
 
@@ -539,16 +543,33 @@ module powerbi.extensibility.visual {
                         }
                     }
   
+                    //Clip path
+                    svgContainer
+                        .append('clipPath')
+                        .attr('id', 'clip' + i)
+                        .append('rect')
+                        .attr('x', 0)
+                        .attr('width', slotSize.width)
+                        .attr('y', (i * slotSize.height))
+                        .attr('height', slotSize.height);
+                    
+                    dataPointContainer.attr('clip-path', 'url(#clip' + i + ')');
+                    
                     //We didn't use the following function because we need Min/Max/Index in the array
                     //Math.max.apply(null, dataPoint.values);
-
                     let x = d3.scale.linear()
                         .domain([0, dataPoint.values.length - 1])
                         .range([labelWidth + slotPadding.x, sparklineSize.width + labelWidth + slotPadding.x]);
 
-                    let yStart = (typeof this.model.settings.line.start !== 'undefined' ? Math.min(bottomValue.value, this.model.settings.line.start) : bottomValue.value);
+                    let yStart = bottomValue.value;
+                    if (dataPoint.target.value != null) yStart = Math.min(dataPoint.target.value, yStart);
+                    if (dataPoint.target.min != null) yStart = Math.min(dataPoint.target.min, yStart);
+                    if (typeof this.model.settings.line.start !== 'undefined' && this.model.settings.line.start != null) yStart = this.model.settings.line.start;
 
-                    let yEnd = (typeof this.model.settings.line.end !== 'undefined' ? Math.max(topValue.value, this.model.settings.line.end) : topValue.value);
+                    let yEnd = topValue.value;
+                    if (dataPoint.target.value != null) yEnd = Math.max(dataPoint.target.value, yEnd);
+                    if (dataPoint.target.max != null) yEnd = Math.max(dataPoint.target.max, yEnd);
+                    if (typeof this.model.settings.line.end !== 'undefined' && this.model.settings.line.end != null) yEnd = this.model.settings.line.end;
 
                     let y = d3.scale.linear()
                         .domain([yEnd, yStart]) 
@@ -566,7 +587,7 @@ module powerbi.extensibility.visual {
                             .attr('stroke', '#ddd');
                     }
 
-                    if (dataPoint.target.min && dataPoint.target.max) {
+                    if (dataPoint.target.min != null && dataPoint.target.max != null) {
                         dataPointContainer.append('rect')
                             .classed('target', true)
                             .attr('x', labelWidth + slotPadding.x)
@@ -576,7 +597,7 @@ module powerbi.extensibility.visual {
                             .attr('fill', this.model.settings.target.rangeFill.solid.color);
                     }
           
-                    if (dataPoint.target.value) {
+                    if (dataPoint.target.value != null) {
                         dataPointContainer.append('line')
                             .classed('target', true)
                             .attr('x1', labelWidth + slotPadding.x)
@@ -632,15 +653,16 @@ module powerbi.extensibility.visual {
                             else if  (this.model.settings.hiLoPoints.loShow && bottomValue.value == val)
                                 color = this.model.settings.hiLoPoints.loFill.solid.color;
 
-                            svgContainer.append('circle')
+                            let existingTooltips = (dataPoint.tooltips[ii] || []);
+                            dataPointContainer.append('circle')
                                 .classed('point', true)
                                 .data([[<VisualTooltipDataItem>{
                                         header: dataPoint.axis[ii] + (dataPoint.category != dataPoint.displayName ? ' (' + dataPoint.category + ')' : ''),
                                         displayName: dataPoint.displayName,
-                                        value: (formatter ? formatter.format(dataPoint.values[ii]) : dataPoint.values[ii]),
+                                        value: String(formatter ? formatter.format(dataPoint.values[ii]) : dataPoint.values[ii]),
                                         color: (color.substr(1, 3) == '333' ? '#000' : color),
                                         markerShape: 'circle'
-                                    }].concat(dataPoint.tooltips[ii])])
+                                    }].concat(existingTooltips)])
                                 .attr('cx', x(ii))
                                 .attr('cy', y(dataPoint.values[ii]))
                                 .attr('r', pointRay)
@@ -773,16 +795,16 @@ module powerbi.extensibility.visual {
                                         (<Event>d3.event).stopPropagation();
                                     });  
                              
-
+                                let existingTooltips = (dataPoint.tooltips[foundIndex] || []);
                                 self.tooltipServiceWrapper.addTooltip(circle, 
                                     function(tooltipEvent: TooltipEventArgs<TooltipEnabledDataPoint>){
                                         return [<VisualTooltipDataItem>{
                                             header: dataPoint.axis[foundIndex] + (dataPoint.category != dataPoint.displayName ? ' (' + dataPoint.category + ')' : ''),
                                             displayName: dataPoint.displayName,
-                                            value: (formatter ? formatter.format(val) : val),
+                                            value: String(formatter ? formatter.format(val) : val),
                                             color: (color.substr(1, 3) == '333' ? '#000' : color),
                                             markerShape: 'circle'
-                                        }].concat(dataPoint.tooltips[foundIndex]); 
+                                        }].concat(existingTooltips); 
                                     }, null, true  
                                 );
                             }
@@ -868,7 +890,7 @@ module powerbi.extensibility.visual {
 
             if (!this.licced) {
                 this.licced = true;
-                OKVizUtility.lic_log(this.meta, options);
+                OKVizUtility.lic_log(this.meta, options, this.host);
             }
 
             //Color Blind module

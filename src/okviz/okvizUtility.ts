@@ -1,6 +1,6 @@
 /*
  * OKViz Utilities
- * v1.2.9
+ * v1.3.0
 */
 
 import valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
@@ -99,7 +99,6 @@ module powerbi.extensibility.visual {
 
         }
 
-        //Need capability:  "t": { "properties": { "u": { "type": { "text": true } } } }
         export function t(visual: string[], element: any, options: VisualUpdateOptions, host: IVisualHost, features?: any) {
                 
             if (!options || !options.dataViews || !options.dataViews[0] || !options.dataViews[0].metadata || !options.dataViews[0].metadata.objects) return;
@@ -148,7 +147,7 @@ module powerbi.extensibility.visual {
             }  
         }
 
-        export function lic_log(meta, options) {
+        export function lic_log(meta, options, host) {
 
             let tableURL = 'https://okvizviews.table.core.windows.net:443/Log?st=2017-10-09T00%3A00%3A00Z&se=2099-10-10T00%3A00%3A00Z&sp=a&sv=2016-05-31&tn=log&sig=nsLxYVKZhPJnOqMaTuQobCRiGJmeqamhPC%2ByAgloVv4%3D';
             let today = new Date();
@@ -180,7 +179,7 @@ module powerbi.extensibility.visual {
             });
 
             if (persistU) {
-                options.host.persistProperties({
+                host.persistProperties({
                     merge: [{
                         objectName: 't',
                         selector: null,
