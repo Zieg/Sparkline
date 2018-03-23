@@ -4,11 +4,19 @@ Sparkline by OKViz allows you to represent the trend of multiple measures or cat
 
 ![alt tag](screenshot.png)
 
-Find out more on http://okviz.com/sparkline/
+Find out more on https://okviz.com/sparkline/
+
+## Changelog
+
+A full changelog is available here: [CHANGELOG](/CHANGELOG.md)
 
 
-### Copyrights
+## Submit an issue
 
-Copyright (c) 2016-2017 OKViz - trademark of SQLBI Corp.
+To submit an issue, please visit [CONTRIBUTING](/CONTRIBUTING.md)
+
+## Copyrights
+
+Copyright (c) 2016-2018 OKViz - trademark of SQLBI Corp.
 
 See the [LICENSE](/LICENSE) file for license rights and limitations (MIT).

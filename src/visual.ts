@@ -237,9 +237,11 @@ module powerbi.extensibility.visual {
             let hasCategoryFilled = (dataCategorical.categories && dataCategorical.categories[0]);
             let hasMultipleMeasuresWithSameRole = false;
 
+            let categoryFormat = '';
             let categories = [];
             if (hasCategoryFilled) {
                 let category = dataCategorical.categories[0];
+                categoryFormat = category.source.format;
                 for (let i = 0; i < category.values.length; i++) {
                     categories.push(category.values[i]);
                 }
@@ -262,6 +264,15 @@ module powerbi.extensibility.visual {
             for (let i = 0; i < categories.length; i++) {
                 
                 let categoryValue = OKVizUtility.makeMeasureReadable(categories[i]);
+                if (Object.prototype.toString.call(categoryValue) === '[object Date]' && categoryFormat != '') {
+                    let formatter = OKVizUtility.Formatter.getFormatter({
+                        format: categoryFormat,
+                        value: categoryValue,
+                        cultureSelector: settings.value.locale
+                    }); 
+                    categoryValue = formatter.format(categoryValue);
+                }
+
                 let displayName;
                 let displayValue = 0;
                 let values = [];
