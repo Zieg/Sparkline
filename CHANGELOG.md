@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-## v1.1.3 (2018-03-23)
+## v1.1.3 (2018-03-24)
 #### API v1.11.0 - compatible with Power BI March 2018
 ### Fixed
 - NaN catching
