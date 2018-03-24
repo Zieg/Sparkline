@@ -660,7 +660,7 @@ module powerbi.extensibility.visual {
                         .attr('stroke-width', this.model.settings.line.weight)
                         .attr('stroke', this.model.settings.line.fill.solid.color)
                         .attr('fill', 'none');
-console.log(this.model.dataPoints);
+
                     let self = this;
                     if (this.model.settings.hiLoPoints.showAllPoints) {
                         
