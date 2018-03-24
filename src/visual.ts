@@ -288,6 +288,9 @@ module powerbi.extensibility.visual {
                     let dataValue = dataCategorical.values[ii];
                     
                     let value:any = dataValue.values[(hasMultipleMeasuresWithSameRole ? 0 : i)];
+
+                    if (isNaN(value)) value = null;
+
                     if (value !== null || settings.line.axis !== 'ignore') { 
                         if (dataValue.source.roles['measure']) {
                             if (!hasMultipleMeasuresWithSameRole || dataValue.source.displayName == categoryValue) {
@@ -334,7 +337,7 @@ module powerbi.extensibility.visual {
                             
                             tooltipsItems.push(<VisualTooltipDataItem>{
                                 displayName: dataValue.source.displayName,
-                                value : OKVizUtility.Formatter.format(value, {
+                                value : (value == undefined ? '(Blank)' : OKVizUtility.Formatter.format(value, {
                                     format: dataValue.source.format,
                                     formatSingleValues: (settings.value.unit == 0),
                                     value: String(settings.value.unit),
@@ -342,7 +345,7 @@ module powerbi.extensibility.visual {
                                     displayUnitSystemType: 2,
                                     allowFormatBeautification: false,
                                     cultureSelector: settings.value.locale
-                                }),
+                                })),
                                 color: '#000',
                                 markerShape: 'circle'
                             });     
@@ -394,7 +397,6 @@ module powerbi.extensibility.visual {
         private selectionManager: ISelectionManager;
         private tooltipServiceWrapper: tooltip.ITooltipServiceWrapper;
         private model: VisualViewModel;
-        private licced: boolean;
 
         private element: d3.Selection<HTMLElement>;
 
@@ -402,7 +404,7 @@ module powerbi.extensibility.visual {
 
             this.meta = {
                 name: 'Sparkline',
-                version: '1.1.2',
+                version: '1.1.3',
                 dev: false
             };
 
@@ -658,7 +660,7 @@ module powerbi.extensibility.visual {
                         .attr('stroke-width', this.model.settings.line.weight)
                         .attr('stroke', this.model.settings.line.fill.solid.color)
                         .attr('fill', 'none');
-                    
+console.log(this.model.dataPoints);
                     let self = this;
                     if (this.model.settings.hiLoPoints.showAllPoints) {
                         
@@ -673,12 +675,13 @@ module powerbi.extensibility.visual {
                                 color = this.model.settings.hiLoPoints.loFill.solid.color;
 
                             let existingTooltips = (dataPoint.tooltips[ii] || []);
+
                             dataPointContainer.append('circle')
                                 .classed('point', true)
                                 .data([[<VisualTooltipDataItem>{
                                         header: dataPoint.axis[ii] + (dataPoint.category != dataPoint.displayName ? ' (' + dataPoint.category + ')' : ''),
                                         displayName: dataPoint.displayName,
-                                        value: String(formatter ? formatter.format(dataPoint.values[ii]) : dataPoint.values[ii]),
+                                        value: (dataPoint.values[ii] == undefined ? '(Blank)' : String(formatter ? formatter.format(dataPoint.values[ii]) : dataPoint.values[ii])),
                                         color: (color.substr(1, 3) == '333' ? '#000' : color),
                                         markerShape: 'circle'
                                     }].concat(existingTooltips)])
@@ -818,12 +821,13 @@ module powerbi.extensibility.visual {
                                         return [<VisualTooltipDataItem>{
                                             header: dataPoint.axis[foundIndex] + (dataPoint.category != dataPoint.displayName ? ' (' + dataPoint.category + ')' : ''),
                                             displayName: dataPoint.displayName,
-                                            value: String(formatter ? formatter.format(val) : val),
+                                            value: (val == undefined ? '(Blank)' : String(formatter ? formatter.format(val) : val)),
                                             color: (color.substr(1, 3) == '333' ? '#000' : color),
                                             markerShape: 'circle'
                                         }].concat(existingTooltips); 
                                     }, null, true  
                                 );
+                                
                             }
  
                         });
@@ -897,17 +901,6 @@ module powerbi.extensibility.visual {
 
                 }
 
-            }
-
-            OKVizUtility.t([this.meta.name, this.meta.version], this.element, options, this.host, {
-                'cd1': this.model.settings.colorBlind.vision,
-                'cd5': (this.model.dataPoints[0].target !== null),
-                'cd15': this.meta.dev
-            });
-
-            if (!this.licced) {
-                this.licced = true;
-                OKVizUtility.lic_log(this.meta, options, this.host);
             }
 
             //Color Blind module
