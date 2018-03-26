@@ -666,7 +666,7 @@ module powerbi.extensibility.visual {
                         
                         for (let ii = 0; ii < dataPoint.values.length; ii++) {
                             let val = dataPoint.values[ii];
-                            if (val == null) continue;
+                            if (val == undefined || val == null) continue;
 
                             let color = this.model.settings.hiLoPoints.curFill.solid.color;
                             if (this.model.settings.hiLoPoints.hiShow && topValue.value == val)
